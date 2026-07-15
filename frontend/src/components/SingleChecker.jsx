@@ -26,7 +26,13 @@ const SingleChecker = ({
       <section className="glass-card checker-section">
         <div className="checker-title">
           <h2>Instant IPO Allotment Checker</h2>
-          <p>Enter your PAN and check real allotment status from KFintech registrar.</p>
+          <p>
+            Enter your details and check real allotment status from{' '}
+            {selectedIpoId === 'ALL'
+              ? 'KFintech & Bigshare registrars'
+              : `${ipos.find(i => i._id === selectedIpoId)?.registrar || 'the'} registrar`
+            }.
+          </p>
         </div>
 
         <form onSubmit={handleCheckAllotment} style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
@@ -39,7 +45,7 @@ const SingleChecker = ({
               onChange={(e) => setSelectedIpoId(e.target.value)}
               disabled={loading}
             >
-              <option value="ALL">All KFintech IPOs (Auto-scan)</option>
+              <option value="ALL">All IPOs (KFintech & Bigshare Auto-scan)</option>
               {ipos.map((ipo) => (
                 <option key={ipo._id} value={ipo._id}>
                   {ipo.name} ({ipo.symbol}) — {ipo.registrar}
@@ -95,7 +101,14 @@ const SingleChecker = ({
 
           <button type="submit" className="submit-btn" disabled={loading || ipos.length === 0}>
             {loading ? (
-              <><RefreshCw className="spin" size={18} /> Checking KFintech Live API...</>
+              <>
+                <RefreshCw className="spin" size={18} />{' '}
+                Checking{' '}
+                {selectedIpoId === 'ALL'
+                  ? 'Registrar Live APIs'
+                  : `${ipos.find(i => i._id === selectedIpoId)?.registrar || 'Registrar'} Live API`
+                }...
+              </>
             ) : (
               <><Search size={18} /> Check Allotment Status</>
             )}
@@ -103,8 +116,10 @@ const SingleChecker = ({
         </form>
 
         <div style={{ background: 'rgba(255, 255, 255, 0.02)', padding: '1rem', borderRadius: '8px', border: '1px solid var(--border-color)', fontSize: '0.8rem' }}>
-          <span style={{ color: 'var(--color-primary)', fontWeight: '600', display: 'block', marginBottom: '0.25rem' }}>Live KFintech Data</span>
-          <p style={{ color: 'var(--text-secondary)', margin: 0 }}>Results are fetched directly from KFintech&apos;s official allotment API. Select an IPO or scan all IPOs at once.</p>
+          <span style={{ color: 'var(--color-primary)', fontWeight: '600', display: 'block', marginBottom: '0.25rem' }}>Live Registrar Data</span>
+          <p style={{ color: 'var(--text-secondary)', margin: 0 }}>
+            Results are fetched directly from KFintech and Bigshare&apos;s official allotment APIs. Select an IPO or scan all IPOs at once.
+          </p>
         </div>
       </section>
 

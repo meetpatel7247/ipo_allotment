@@ -1,7 +1,7 @@
 import express from 'express';
 import { getIPOs, getHistory, addHistory, clearAll, addIPO } from '../config/db.js';
-import { queryAllIPOs, queryBulkIPOs } from '../services/kfintechService.js';
-import { seedKFintechIPOs } from '../config/seed.js';
+import { queryAllIPOs, queryBulkIPOs } from '../services/allotmentService.js';
+import { seedAllIPOs } from '../config/seed.js';
 
 const router = express.Router();
 
@@ -101,7 +101,11 @@ router.post('/check-bulk-allotment', async (req, res) => {
     if (!ipo) return res.status(404).json({ error: 'Selected IPO not found.' });
 
     if (!ipo.clientId) {
-      return res.status(400).json({ error: 'Selected IPO is missing KFintech client ID.' });
+      return res.status(400).json({ error: 'Selected IPO is missing registrar client ID.' });
+    }
+
+    if (!['KFintech', 'Bigshare'].includes(ipo.registrar)) {
+      return res.status(400).json({ error: `Bulk allotment is not supported for registrar: ${ipo.registrar}.` });
     }
 
     const queryResult = await queryBulkIPOs(ipo, searchType, values);
@@ -124,7 +128,7 @@ router.post('/check-bulk-allotment', async (req, res) => {
 router.post('/admin/seed', async (req, res) => {
   try {
     await clearAll();
-    await seedKFintechIPOs(getIPOs, addIPO, clearAll);
+    await seedAllIPOs(getIPOs, addIPO, clearAll);
     res.json({ message: 'Database successfully re-seeded.' });
   } catch (error) {
     res.status(500).json({ error: 'Failed to re-seed database.' });

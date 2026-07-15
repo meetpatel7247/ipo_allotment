@@ -1,0 +1,222 @@
+$('#btn_Search').click(function (e) {
+                debugger;
+                
+                $("#lblpan").hide();
+                $("#lblapplication").hide();
+                $("#lblcdsl").hide();
+                $("#lblnsdl").hide();
+                $("#lblComp").hide();
+                $("#lblSelect").hide();
+                $("#lblcaptcha").hide();
+                $("#lblType").hide();
+                if ($('#ddlCompany').val() == "--Select Company--") {
+                    $("#lblComp").show();
+                    $("#lblComp").text('Please Select Company...!');
+                    return false;
+                }
+                if ($('#SelectionType').val() != "0") {
+                    if ($('#SelectionType').val() == "AP") {
+                        if ($('#txtapplication').val().length != 0) {
+                            var reg = new RegExp("^[A-Za-z0-9]+$");
+                            if (reg.test($('#txtapplication').val())) {
+                                if ($('#txtapplication').val().length > 50) {
+                                    $("#lblapplication").show();
+                                    $("#lblapplication").text('Invalid Application No...!');
+                                    return false;
+                                }
+                            }
+                            else {
+                                $("#lblapplication").show();
+                                $("#lblapplication").text('Invalid Application No...!');
+                                return false;
+                            }
+                        }
+                        else {
+                            $("#lblapplication").show();
+                            $("#lblapplication").text('Please Enter Application No...!');
+                            return false;
+                        }
+                    }
+                    else if ($('#SelectionType').val() == "BN") {///^[0-9]{16}$
+                        if ($('#ddlType').val() != "0") {
+                            if ($('#ddlType').val() == "CDSL") {
+                                var reg = new RegExp("^[0-9]{16}$");
+                                if ($('#txtcsdl').val().length != 0) {
+                                    if (!reg.test($('#txtcsdl').val())) {
+                                        $("#lblcdsl").show();
+                                        $("#lblcdsl").text('Invalid Beneficiary ID...!');
+                                        return false;
+                                    }
+                                }
+                                else {
+                                    $("#lblcdsl").show();
+                                    $("#lblcdsl").text('Please Enter CDSL ID...!');
+                                    return false;
+                                }
+                            }
+                            if ($('#ddlType').val() == "NSDL") {//\b(IN|in|In|iN)([0-9]){6}$
+                                var regDp = new RegExp("\(IN|in|In|iN)([0-9]){6}$");
+                                var regCl = new RegExp("^[0-9]{8}$");
+                                if ($('#txtDPID').val().length != 0) {
+                                    if (!regDp.test($('#txtDPID').val())) {
+                                        $("#lblnsdl").show();
+                                        $("#lblnsdl").text('Invalid DPID...!');
+                                        return false;
+                                    }
+                                }
+                                else {
+                                    if ($('#txtDPID').val().length == 0 && $('#txtClId').val().length == 0) {
+                                        $("#lblnsdl").show();
+                                        $("#lblnsdl").text('Please Enter DPID and CLID...!');
+                                        return false;
+                                    }
+                                    else {
+                                        $("#lblnsdl").show();
+                                        $("#lblnsdl").text('Please Enter DPID...!');
+                                        return false;
+                                    }
+                                }
+                                if ($('#txtClId').val().length != 0) {
+                                    if (!regCl.test($('#txtClId').val())) {
+                                        $("#lblnsdl").show();
+                                        $("#lblnsdl").text('Invalid CLID...!');
+                                        return false;
+                                    }
+                                }
+                                else {
+                                    if ($('#txtDPID').val().length == 0 && $('#txtClId').val().length == 0) {
+                                        $("#lblnsdl").show();
+                                        $("#lblnsdl").text('Please Enter DPID and CLID...!');
+                                        return false;
+                                    }
+                                    else {
+                                        $("#lblnsdl").show();
+                                        $("#lblnsdl").text('Please Enter CLID...!');
+                                        return false;
+                                    }
+                                }
+                            }
+                        }
+                        else {
+                            $("#lblType").show();
+                            $("#lblType").text('Please Select NSDL OR CDSL...!');
+                            return false;
+                        }
+                    }
+                    else if ($('#SelectionType').val() == "PN") {
+                        if ($('#txtpan').val() != "") {
+                            var pan = $('#txtpan').val();
+                            var reg = new RegExp("([aA-zZ]){5}([0-9]){4}([aA-zZ]){1}$");
+                            if (!reg.test(pan)) {
+                                $("#lblpan").show();
+                                $("#lblpan").text('Invalid Pan No...!');
+                                return false;
+                            }
+                        }
+                        else {
+                            $("#lblpan").show();
+                            $("#lblpan").text('Please Enter Pan No...!');
+                            return false;
+                        }
+                    }
+                }
+                else {
+                    $("#lblSelect").show();
+                    $("#lblSelect").text('Please Select Type...!');
+                    return false;
+                }
+
+                var captchaInput = $("#captcha-input").val();
+                var captchaCode = sessionStorage.getItem("captchaCode");
+                if (captchaInput != captchaCode) {
+                    $("#lblcaptcha").show();
+                    $("#lblcaptcha").text('Invalid captcha code. Please try again.');
+                    generateCaptcha();
+                    $("#captcha-input").val("");
+                    return false;
+                }
+                showLoader();
+                $.ajax({
+                    type: "POST",
+                    contentType: "application/json; charset=utf-8",
+                    data: "{ Applicationno: '" + $('#txtapplication').val() + "',Company: '" + $('#ddlCompany').val() + "',SelectionType: '" + $('#SelectionType').val() + "',PanNo: '" + $('#txtpan').val() + "', txtcsdl: '" + $('#txtcsdl').val() + "', txtDPID: '" + $('#txtDPID').val() + "',txtClId: '" + $('#txtClId').val() + "',ddlType:'" + $('#ddlType').val() + "',lang: '" + $('#ddllang').val() + "'}",
+                    url: "Data.aspx/FetchIpodetails",
+                    dataType: "json",
+                    success: function (data) {
+
+                        var Comp = data.d;
+                        if (Comp.DPID == "No data found") {
+                            $("#dPrint").hide();
+                            $("#lblpan").hide();
+                            $("#lblapplication").hide();
+                            $("#lblcdsl").hide();
+                            $("#lblnsdl").hide();
+                            $("#lblSelect").hide();
+                            $("#lblcaptcha").hide();
+                            $("#captcha-input").val('');
+                            $("#lblType").hide();
+                            generateCaptcha();
+                            swal("No Record Found...!", "", "error");
+                            hideLoader();
+                        }
+                        else if (Comp.DPID == "Please Enter Valid Application No") {
+                            $("#dPrint").hide();
+                            $("#lblpan").hide();
+                            $("#lblcdsl").hide();
+                            $("#lblnsdl").hide();
+                            $("#lblSelect").hide();
+                            $("#lblcaptcha").hide();
+                            $("#lblType").hide();
+                            $("#captcha-input").val('');
+                            generateCaptcha();
+                            $("#lblapplication").show();
+                            $("#lblapplication").text('Invalid Application No...!');
+                            hideLoader();
+                        }
+                        else if (Comp.DPID == "Please Enter Valid Pan No") {
+                            $("#dPrint").hide();
+                            $("#lblapplication").hide();
+                            $("#lblcdsl").hide();
+                            $("#lblnsdl").hide();
+                            $("#lblSelect").hide();
+                            $("#lblcaptcha").hide();
+                            $("#lblType").hide();
+                            $("#captcha-input").val('');
+                            generateCaptcha();
+                            $("#lblpan").show();
+                            $("#lblpan").text('Invalid Pan No...!');
+                            hideLoader();
+                        }
+                        else if (Comp.DPID == "Please Enter Valid Beneficiary ID") {
+                            $("#dPrint").hide();
+                            $("#lblpan").hide();
+                            $("#lblapplication").hide();
+                            $("#lblnsdl").hide();
+                            $("#lblSelect").hide();
+                            $("#lblcaptcha").hide();
+                            $("#lblType").hide();
+                            $("#captcha-input").val('');
+                            generateCaptcha();
+                            $("#lblcdsl").show();
+                            $("#lblcdsl").text('Invalid Beneficiary ID...!');
+                            hideLoader();
+                        }
+                        else if (Comp.DPID == "Please Enter Valid CLID") {
+                            $("#dPrint").hide();
+                            $("#lblpan").hide();
+                            $("#lblapplication").hide();
+                            $("#lblcdsl").hide();
+                            $("#lblSelect").hide();
+                            $("#lblcaptcha").hide();
+                            $("#lblType").hide();
+                            $("#captcha-input").val('');
+                            generateCaptcha();
+                            $("#lblnsdl").show();
+                            $("#lblnsdl").text('Invalid CLID...!');
+                            hideLoader();
+                        }
+                        else if (Comp.DPID == "Please Enter Valid DPID") {
+                            $("#dPrint").hide();
+                            $("#lblpan").hide();
+                            $("#lblapplication").hide();
+                       

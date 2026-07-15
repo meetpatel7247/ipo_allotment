@@ -21,7 +21,8 @@ function App() {
   const [stats, setStats] = useState({ totalQueries: 0, allotmentRate: 0, activeIpos: 0 });
   const [activeStep, setActiveStep] = useState(0);
   const [simulationSteps, setSimulationSteps] = useState([
-    { name: 'KFintech Live API', resultStatus: 'pending' }
+    { name: 'KFintech Live API', resultStatus: 'pending' },
+    { name: 'Bigshare Live API', resultStatus: 'pending' }
   ]);
 
   useEffect(() => {
@@ -63,18 +64,48 @@ function App() {
       return setErrors({ searchValue: 'Invalid PAN format. Must be 5 letters, 4 numbers, 1 letter.' });
     }
 
+    let initialSteps = [];
+    if (selectedIpoId === 'ALL') {
+      initialSteps = [
+        { name: 'KFintech Live API', resultStatus: 'pending' },
+        { name: 'Bigshare Live API', resultStatus: 'pending' }
+      ];
+    } else {
+      const selectedIpo = ipos.find(i => i._id === selectedIpoId);
+      if (selectedIpo) {
+        initialSteps = [
+          { name: `${selectedIpo.registrar} Live API`, resultStatus: 'pending' }
+        ];
+      } else {
+        initialSteps = [
+          { name: 'KFintech Live API', resultStatus: 'pending' },
+          { name: 'Bigshare Live API', resultStatus: 'pending' }
+        ];
+      }
+    }
+
     try {
       setLoading(true); setResults(null);
-      setSimulationSteps([{ name: 'KFintech Live API', resultStatus: 'pending' }]);
+      setSimulationSteps(initialSteps);
       const res = await axios.post(`${API_BASE_URL}/check-allotment`, { ipoId: selectedIpoId, searchType, searchValue }, { timeout: selectedIpoId === 'ALL' ? 600000 : 120000 });
       const registrarDetails = res.data.allRegistrarsDetails;
 
       setActiveStep(0);
       await new Promise(r => setTimeout(r, 400));
-      const kf = registrarDetails.find(r => r.registrar === 'KFintech') || { status: 'No Record Found' };
-      setSimulationSteps([{ name: 'KFintech Live API', resultStatus: kf.status }]);
+      
+      const updatedSteps = initialSteps.map(step => {
+        if (step.name.includes('KFintech')) {
+          const kf = registrarDetails.find(r => r.registrar === 'KFintech') || { status: 'No Record Found' };
+          return { ...step, resultStatus: kf.status };
+        } else if (step.name.includes('Bigshare')) {
+          const bs = registrarDetails.find(r => r.registrar === 'Bigshare') || { status: 'No Record Found' };
+          return { ...step, resultStatus: bs.status };
+        }
+        return step;
+      });
+      setSimulationSteps(updatedSteps);
 
-      setActiveStep(1);
+      setActiveStep(initialSteps.length);
       await new Promise(r => setTimeout(r, 200));
       setResults(res.data.results); setLoading(false); fetchHistory();
     } catch (err) {
@@ -112,7 +143,7 @@ function App() {
       )}
 
       <footer className="app-footer">
-        <p>© 2026 IPO Allotment Status Portal. Live data from KFintech registrar.</p>
+        <p>© 2026 IPO Allotment Status Portal. Live data from KFintech & Bigshare registrars.</p>
         <div className="footer-links">
           <a href="#privacy">Privacy Policy</a>
           <a href="#terms">Terms of Service</a>

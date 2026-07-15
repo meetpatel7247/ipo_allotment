@@ -2,12 +2,29 @@ import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import axios from 'axios';
+import { fetchLiveBigshareIPOs } from '../services/bigshareService.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const KFINTECH_IPOS_FILE = path.join(__dirname, '../data/kfintech_ipos.json');
+const BIGSHARE_IPOS_FILE = path.join(__dirname, '../data/bigshare_ipos.json');
 const KFINTECH_URL = 'https://ipostatus.kfintech.com/';
+
+const makeBigshareClientId = (companyId) => `BS_${companyId}`;
+
+const loadBigshareIPOs = () => {
+  if (!fs.existsSync(BIGSHARE_IPOS_FILE)) {
+    console.warn('bigshare_ipos.json not found.');
+    return [];
+  }
+  try {
+    return JSON.parse(fs.readFileSync(BIGSHARE_IPOS_FILE, 'utf-8'));
+  } catch (err) {
+    console.error(`Error reading Bigshare JSON file: ${err.message}`);
+    return [];
+  }
+};
 
 const makeSymbol = (name, clientId) => {
   const words = name.replace(/[^A-Z0-9\s]/gi, '').trim().split(/\s+/).filter(Boolean);
@@ -97,6 +114,90 @@ export const fetchLiveKFintechIPOs = async () => {
   }
 };
 
+const seedRegistrarIPOs = async ({
+  registrar,
+  ipoList,
+  backupFile,
+  getIPOs,
+  addIPO,
+  toClientId,
+  logLabel
+}) => {
+  if (!ipoList || ipoList.length === 0) {
+    console.warn(`No ${logLabel} IPOs to seed.`);
+    return;
+  }
+
+  const existing = await getIPOs();
+  const existingClientIds = new Set(existing.map((ipo) => ipo.clientId));
+  const usedSymbols = new Set(existing.map((ipo) => ipo.symbol));
+  let newIposCount = 0;
+
+  for (const item of ipoList) {
+    const clientId = toClientId(item);
+    if (existingClientIds.has(clientId)) continue;
+
+    let symbol = makeSymbol(item.name, clientId);
+    let suffix = 1;
+    while (usedSymbols.has(symbol)) {
+      symbol = `${makeSymbol(item.name, clientId)}${suffix}`;
+      suffix++;
+    }
+    usedSymbols.add(symbol);
+
+    await addIPO({
+      name: item.name,
+      symbol,
+      clientId,
+      registrar,
+      price: 0,
+      lotSize: 0,
+      status: 'Active',
+      subscriptionRate: 0
+    });
+    newIposCount++;
+  }
+
+  if (newIposCount > 0) {
+    console.log(`Seeded ${newIposCount} new ${logLabel} IPOs.`);
+  } else {
+    console.log(`No new ${logLabel} IPOs found. Database is up to date.`);
+  }
+};
+
+export const seedBigshareIPOs = async (getIPOs, addIPO) => {
+  try {
+    let bigshareList = await fetchLiveBigshareIPOs();
+
+    if (!bigshareList || bigshareList.length === 0) {
+      console.warn('Falling back to local bigshare_ipos.json...');
+      bigshareList = loadBigshareIPOs();
+    } else {
+      try {
+        if (!fs.existsSync(path.dirname(BIGSHARE_IPOS_FILE))) {
+          fs.mkdirSync(path.dirname(BIGSHARE_IPOS_FILE), { recursive: true });
+        }
+        fs.writeFileSync(BIGSHARE_IPOS_FILE, JSON.stringify(bigshareList, null, 2));
+        console.log('Saved live IPO list to local backup: bigshare_ipos.json');
+      } catch (err) {
+        console.warn(`Failed to write local backup of Bigshare IPO list: ${err.message}`);
+      }
+    }
+
+    await seedRegistrarIPOs({
+      registrar: 'Bigshare',
+      ipoList: bigshareList,
+      backupFile: BIGSHARE_IPOS_FILE,
+      getIPOs,
+      addIPO,
+      toClientId: (item) => makeBigshareClientId(item.companyId),
+      logLabel: 'Bigshare'
+    });
+  } catch (error) {
+    console.error(`Failed to seed Bigshare IPOs: ${error.message}`);
+  }
+};
+
 export const seedKFintechIPOs = async (getIPOs, addIPO, clearAll) => {
   try {
     let kfintechList = await fetchLiveKFintechIPOs();
@@ -122,46 +223,24 @@ export const seedKFintechIPOs = async (getIPOs, addIPO, clearAll) => {
       return;
     }
 
-    const existing = await getIPOs();
-    const existingClientIds = new Set(existing.map(ipo => ipo.clientId));
-    const usedSymbols = new Set(existing.map(ipo => ipo.symbol));
-    let newIposCount = 0;
-    
-    for (const item of kfintechList) {
-      if (existingClientIds.has(item.clientId)) {
-        continue; // Already seeded
-      }
-      
-      let symbol = makeSymbol(item.name, item.clientId);
-      let suffix = 1;
-      while (usedSymbols.has(symbol)) {
-        symbol = `${makeSymbol(item.name, item.clientId)}${suffix}`;
-        suffix++;
-      }
-      usedSymbols.add(symbol);
-
-      await addIPO({
-        name: item.name,
-        symbol,
-        clientId: item.clientId,
-        registrar: 'KFintech',
-        price: 0,
-        lotSize: 0,
-        status: 'Active',
-        subscriptionRate: 0
-      });
-      newIposCount++;
-    }
-    
-    if (newIposCount > 0) {
-      console.log(`Seeded ${newIposCount} new KFintech IPOs.`);
-    } else {
-      console.log('No new IPOs found. Database is up to date.');
-    }
+    await seedRegistrarIPOs({
+      registrar: 'KFintech',
+      ipoList: kfintechList,
+      backupFile: KFINTECH_IPOS_FILE,
+      getIPOs,
+      addIPO,
+      toClientId: (item) => item.clientId,
+      logLabel: 'KFintech'
+    });
   } catch (error) {
     console.error(`Failed to seed KFintech IPOs: ${error.message}`);
   }
 };
 
+export const seedAllIPOs = async (getIPOs, addIPO, clearAll) => {
+  await seedKFintechIPOs(getIPOs, addIPO, clearAll);
+  await seedBigshareIPOs(getIPOs, addIPO);
+};
+
 // Backward-compatible export name
-export const seedDefaultIPOs = seedKFintechIPOs;
+export const seedDefaultIPOs = seedAllIPOs;

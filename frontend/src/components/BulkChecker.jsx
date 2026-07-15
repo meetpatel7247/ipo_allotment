@@ -101,7 +101,7 @@ const BulkChecker = ({ ipos, fetchHistory }) => {
         <div className="glass-card checker-section">
           <div className="checker-title">
             <h2>Excel/CSV Bulk Checker</h2>
-            <p>Upload your PAN card list (Excel/CSV) and check real allotment status from KFintech.</p>
+            <p>Upload your data list (Excel/CSV) and check real allotment status from {selectedIpo ? selectedIpo.registrar : 'the registrar'}.</p>
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
             <div className="form-group">
@@ -136,7 +136,9 @@ const BulkChecker = ({ ipos, fetchHistory }) => {
                     {headers.map((h, i) => <option key={i} value={i}>Column {i + 1}: {h || `Column ${i + 1}`}</option>)}
                   </select>
                 </div>
-                <button type="button" className="submit-btn" onClick={handleBulkCheck}>Check {parsedRows.length} PANs via KFintech API</button>
+                <button type="button" className="submit-btn" onClick={handleBulkCheck}>
+                  Check {parsedRows.length} {searchType === 'PAN' ? 'PANs' : searchType === 'ApplicationNo' ? 'Apps' : 'Demats'} via {selectedIpo ? selectedIpo.registrar : 'Registrar'} API
+                </button>
               </div>
             )}
             {error && <div style={{ color: 'var(--color-danger)', display: 'flex', gap: '0.5rem', alignItems: 'center' }}><AlertTriangle size={16} />{error}</div>}

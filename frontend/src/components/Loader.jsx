@@ -5,6 +5,12 @@ import { Loader2, CheckCircle2, XCircle, Search, HelpCircle } from 'lucide-react
  * Loader component displays live KFintech API check progress.
  */
 const Loader = ({ searchType, searchValue, activeStep, steps }) => {
+  const hasKFintech = steps.some(s => s.name.includes('KFintech'));
+  const hasBigshare = steps.some(s => s.name.includes('Bigshare'));
+  let loaderTitle = 'Checking Registrars';
+  if (hasKFintech && !hasBigshare) loaderTitle = 'Checking KFintech';
+  else if (hasBigshare && !hasKFintech) loaderTitle = 'Checking Bigshare';
+
   return (
     <div className="glass-card simulation-card">
       <div className="sim-header" style={{ textAlign: 'center' }}>
@@ -14,7 +20,7 @@ const Loader = ({ searchType, searchValue, activeStep, steps }) => {
             <Search size={32} />
           </div>
         </div>
-        <h3 style={{ fontSize: '1.25rem', marginBottom: '0.25rem' }}>Checking KFintech</h3>
+        <h3 style={{ fontSize: '1.25rem', marginBottom: '0.25rem' }}>{loaderTitle}</h3>
         <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem' }}>
           Verifying {searchType} <span style={{ color: 'var(--color-primary)', fontWeight: 'bold' }}>{searchValue}</span> with live registrar data...
         </p>
