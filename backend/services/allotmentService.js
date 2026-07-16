@@ -1,5 +1,6 @@
 import * as kfintechService from './kfintechService.js';
 import * as bigshareService from './bigshareService.js';
+import * as mufgService from './mufgService.js';
 
 const mergeRegistrarDetails = (detailsList) => {
   const merged = new Map();
@@ -20,10 +21,12 @@ const mergeRegistrarDetails = (detailsList) => {
 export const queryAllIPOs = async (ipos, searchType, searchValue) => {
   const kfintechIpos = ipos.filter((ipo) => ipo.registrar === 'KFintech');
   const bigshareIpos = ipos.filter((ipo) => ipo.registrar === 'Bigshare');
+  const mufgIpos = ipos.filter((ipo) => ipo.registrar === 'MUFG');
 
   const tasks = [];
   if (kfintechIpos.length) tasks.push(kfintechService.queryAllIPOs(kfintechIpos, searchType, searchValue));
   if (bigshareIpos.length) tasks.push(bigshareService.queryAllIPOs(bigshareIpos, searchType, searchValue));
+  if (mufgIpos.length) tasks.push(mufgService.queryAllIPOs(mufgIpos, searchType, searchValue));
 
   if (!tasks.length) {
     return { success: false, allRegistrarsDetails: [], results: [] };
@@ -43,6 +46,9 @@ export const queryBulkIPOs = async (ipo, searchType, values) => {
   }
   if (ipo.registrar === 'KFintech') {
     return kfintechService.queryBulkIPOs(ipo, searchType, values);
+  }
+  if (ipo.registrar === 'MUFG') {
+    return mufgService.queryBulkIPOs(ipo, searchType, values);
   }
   throw new Error(`Bulk allotment is not supported for registrar: ${ipo.registrar}`);
 };

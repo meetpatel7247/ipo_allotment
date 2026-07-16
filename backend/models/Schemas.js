@@ -5,7 +5,7 @@ const IPOSchema = new mongoose.Schema({
   name: { type: String, required: true },
   symbol: { type: String, required: true, unique: true },
   clientId: { type: String, required: true, unique: true },
-  registrar: { type: String, required: true, enum: ['KFintech', 'Link Intime', 'Bigshare'], default: 'KFintech' },
+  registrar: { type: String, required: true, enum: ['KFintech', 'Link Intime', 'Bigshare', 'MUFG'], default: 'KFintech' },
   price: { type: Number, default: 0 },
   lotSize: { type: Number, default: 0 },
   allotmentDate: { type: Date },

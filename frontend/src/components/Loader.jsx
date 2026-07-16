@@ -7,9 +7,11 @@ import { Loader2, CheckCircle2, XCircle, Search, HelpCircle } from 'lucide-react
 const Loader = ({ searchType, searchValue, activeStep, steps }) => {
   const hasKFintech = steps.some(s => s.name.includes('KFintech'));
   const hasBigshare = steps.some(s => s.name.includes('Bigshare'));
+  const hasMUFG = steps.some(s => s.name.includes('MUFG'));
   let loaderTitle = 'Checking Registrars';
-  if (hasKFintech && !hasBigshare) loaderTitle = 'Checking KFintech';
-  else if (hasBigshare && !hasKFintech) loaderTitle = 'Checking Bigshare';
+  if (hasKFintech && !hasBigshare && !hasMUFG) loaderTitle = 'Checking KFintech';
+  else if (hasBigshare && !hasKFintech && !hasMUFG) loaderTitle = 'Checking Bigshare';
+  else if (hasMUFG && !hasKFintech && !hasBigshare) loaderTitle = 'Checking MUFG';
 
   return (
     <div className="glass-card simulation-card">

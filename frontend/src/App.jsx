@@ -22,7 +22,8 @@ function App() {
   const [activeStep, setActiveStep] = useState(0);
   const [simulationSteps, setSimulationSteps] = useState([
     { name: 'KFintech Live API', resultStatus: 'pending' },
-    { name: 'Bigshare Live API', resultStatus: 'pending' }
+    { name: 'Bigshare Live API', resultStatus: 'pending' },
+    { name: 'MUFG Live API', resultStatus: 'pending' }
   ]);
 
   useEffect(() => {
@@ -68,7 +69,8 @@ function App() {
     if (selectedIpoId === 'ALL') {
       initialSteps = [
         { name: 'KFintech Live API', resultStatus: 'pending' },
-        { name: 'Bigshare Live API', resultStatus: 'pending' }
+        { name: 'Bigshare Live API', resultStatus: 'pending' },
+        { name: 'MUFG Live API', resultStatus: 'pending' }
       ];
     } else {
       const selectedIpo = ipos.find(i => i._id === selectedIpoId);
@@ -79,7 +81,8 @@ function App() {
       } else {
         initialSteps = [
           { name: 'KFintech Live API', resultStatus: 'pending' },
-          { name: 'Bigshare Live API', resultStatus: 'pending' }
+          { name: 'Bigshare Live API', resultStatus: 'pending' },
+          { name: 'MUFG Live API', resultStatus: 'pending' }
         ];
       }
     }
@@ -100,6 +103,9 @@ function App() {
         } else if (step.name.includes('Bigshare')) {
           const bs = registrarDetails.find(r => r.registrar === 'Bigshare') || { status: 'No Record Found' };
           return { ...step, resultStatus: bs.status };
+        } else if (step.name.includes('MUFG')) {
+          const mufg = registrarDetails.find(r => r.registrar === 'MUFG') || { status: 'No Record Found' };
+          return { ...step, resultStatus: mufg.status };
         }
         return step;
       });
@@ -143,7 +149,7 @@ function App() {
       )}
 
       <footer className="app-footer">
-        <p>© 2026 IPO Allotment Status Portal. Live data from KFintech & Bigshare registrars.</p>
+        <p>© 2026 IPO Allotment Status Portal. Live data from KFintech, Bigshare & MUFG registrars.</p>
         <div className="footer-links">
           <a href="#privacy">Privacy Policy</a>
           <a href="#terms">Terms of Service</a>

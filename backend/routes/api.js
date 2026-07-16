@@ -104,7 +104,7 @@ router.post('/check-bulk-allotment', async (req, res) => {
       return res.status(400).json({ error: 'Selected IPO is missing registrar client ID.' });
     }
 
-    if (!['KFintech', 'Bigshare'].includes(ipo.registrar)) {
+    if (!['KFintech', 'Bigshare', 'MUFG'].includes(ipo.registrar)) {
       return res.status(400).json({ error: `Bulk allotment is not supported for registrar: ${ipo.registrar}.` });
     }
 

@@ -29,7 +29,7 @@ const SingleChecker = ({
           <p>
             Enter your details and check real allotment status from{' '}
             {selectedIpoId === 'ALL'
-              ? 'KFintech & Bigshare registrars'
+              ? 'KFintech, Bigshare & MUFG registrars'
               : `${ipos.find(i => i._id === selectedIpoId)?.registrar || 'the'} registrar`
             }.
           </p>
@@ -45,7 +45,7 @@ const SingleChecker = ({
               onChange={(e) => setSelectedIpoId(e.target.value)}
               disabled={loading}
             >
-              <option value="ALL">All IPOs (KFintech & Bigshare Auto-scan)</option>
+              <option value="ALL">All IPOs (KFintech, Bigshare & MUFG)</option>
               {ipos.map((ipo) => (
                 <option key={ipo._id} value={ipo._id}>
                   {ipo.name} ({ipo.symbol}) — {ipo.registrar}
@@ -118,7 +118,7 @@ const SingleChecker = ({
         <div style={{ background: 'rgba(255, 255, 255, 0.02)', padding: '1rem', borderRadius: '8px', border: '1px solid var(--border-color)', fontSize: '0.8rem' }}>
           <span style={{ color: 'var(--color-primary)', fontWeight: '600', display: 'block', marginBottom: '0.25rem' }}>Live Registrar Data</span>
           <p style={{ color: 'var(--text-secondary)', margin: 0 }}>
-            Results are fetched directly from KFintech and Bigshare&apos;s official allotment APIs. Select an IPO or scan all IPOs at once.
+            Results are fetched directly from KFintech, Bigshare, and MUFG&apos;s official allotment APIs. Select an IPO or scan all IPOs at once.
           </p>
         </div>
       </section>

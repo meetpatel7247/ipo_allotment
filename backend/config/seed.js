@@ -3,15 +3,31 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import axios from 'axios';
 import { fetchLiveBigshareIPOs } from '../services/bigshareService.js';
+import { fetchLiveMUFGIPOs } from '../services/mufgService.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const KFINTECH_IPOS_FILE = path.join(__dirname, '../data/kfintech_ipos.json');
 const BIGSHARE_IPOS_FILE = path.join(__dirname, '../data/bigshare_ipos.json');
+const MUFG_IPOS_FILE = path.join(__dirname, '../data/mufg_ipos.json');
 const KFINTECH_URL = 'https://ipostatus.kfintech.com/';
 
 const makeBigshareClientId = (companyId) => `BS_${companyId}`;
+const makeMufgClientId = (companyId) => `MUFG_${companyId}`;
+
+const loadMufgIPOs = () => {
+  if (!fs.existsSync(MUFG_IPOS_FILE)) {
+    console.warn('mufg_ipos.json not found.');
+    return [];
+  }
+  try {
+    return JSON.parse(fs.readFileSync(MUFG_IPOS_FILE, 'utf-8'));
+  } catch (err) {
+    console.error(`Error reading MUFG JSON file: ${err.message}`);
+    return [];
+  }
+};
 
 const loadBigshareIPOs = () => {
   if (!fs.existsSync(BIGSHARE_IPOS_FILE)) {
@@ -237,9 +253,43 @@ export const seedKFintechIPOs = async (getIPOs, addIPO, clearAll) => {
   }
 };
 
+export const seedMUFGIPOs = async (getIPOs, addIPO) => {
+  try {
+    let mufgList = await fetchLiveMUFGIPOs();
+
+    if (!mufgList || mufgList.length === 0) {
+      console.warn('Falling back to local mufg_ipos.json...');
+      mufgList = loadMufgIPOs();
+    } else {
+      try {
+        if (!fs.existsSync(path.dirname(MUFG_IPOS_FILE))) {
+          fs.mkdirSync(path.dirname(MUFG_IPOS_FILE), { recursive: true });
+        }
+        fs.writeFileSync(MUFG_IPOS_FILE, JSON.stringify(mufgList, null, 2));
+        console.log('Saved live IPO list to local backup: mufg_ipos.json');
+      } catch (err) {
+        console.warn(`Failed to write local backup of MUFG IPO list: ${err.message}`);
+      }
+    }
+
+    await seedRegistrarIPOs({
+      registrar: 'MUFG',
+      ipoList: mufgList,
+      backupFile: MUFG_IPOS_FILE,
+      getIPOs,
+      addIPO,
+      toClientId: (item) => makeMufgClientId(item.companyId),
+      logLabel: 'MUFG'
+    });
+  } catch (error) {
+    console.error(`Failed to seed MUFG IPOs: ${error.message}`);
+  }
+};
+
 export const seedAllIPOs = async (getIPOs, addIPO, clearAll) => {
   await seedKFintechIPOs(getIPOs, addIPO, clearAll);
   await seedBigshareIPOs(getIPOs, addIPO);
+  await seedMUFGIPOs(getIPOs, addIPO);
 };
 
 // Backward-compatible export name
