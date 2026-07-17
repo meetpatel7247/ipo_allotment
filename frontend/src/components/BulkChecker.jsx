@@ -37,7 +37,7 @@ const BulkChecker = ({ ipos, fetchHistory }) => {
         if (!rawData || rawData.length === 0) return setError('Spreadsheet is empty.');
         setHeaders(rawData[0]);
         setParsedRows(rawData.slice(1).filter(r => r.some(c => c !== '')));
-      } catch (err) { setError('Failed to parse file.'); }
+      } catch { setError('Failed to parse file.'); }
     };
     reader.readAsBinaryString(selectedFile);
   };

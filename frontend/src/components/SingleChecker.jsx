@@ -144,9 +144,6 @@ const SingleChecker = ({
               <ResultCard 
                 key={res.ipoSymbol} 
                 res={res} 
-                searchType={searchType} 
-                searchValue={searchValue} 
-                handleReset={handleReset} 
               />
             ))}
           </div>

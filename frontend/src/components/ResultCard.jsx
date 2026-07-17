@@ -1,7 +1,7 @@
 import React from 'react';
-import { CheckCircle2, XCircle, AlertCircle, RefreshCw, Share2, Layers } from 'lucide-react';
+import { CheckCircle2, XCircle, AlertCircle, Layers } from 'lucide-react';
 
-const ResultCard = ({ res, searchType, searchValue, handleReset }) => {
+const ResultCard = ({ res }) => {
   const getStatusIcon = (status) => {
     switch (status) {
       case 'Allotted':
