@@ -2,6 +2,9 @@ import React from 'react';
 import { Search, RefreshCw, User, FileText, CreditCard, Grid } from 'lucide-react';
 import ResultCard from './ResultCard';
 import Loader from './Loader';
+import IpoSelector from './IpoSelector';
+import SearchTabs from './SearchTabs';
+import StatsSummaryCard from './StatsSummaryCard';
 
 const SingleChecker = ({
   ipos,
@@ -37,40 +40,20 @@ const SingleChecker = ({
 
         <form onSubmit={handleCheckAllotment} style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
           {/* Select IPO */}
-          <div className="form-group">
-            <label>Select IPO to Check</label>
-            <select 
-              className="select-input" 
-              value={selectedIpoId} 
-              onChange={(e) => setSelectedIpoId(e.target.value)}
-              disabled={loading}
-            >
-              <option value="ALL">All IPOs (KFintech, Bigshare & MUFG)</option>
-              {ipos.map((ipo) => (
-                <option key={ipo._id} value={ipo._id}>
-                  {ipo.name} ({ipo.symbol}) — {ipo.registrar}
-                </option>
-              ))}
-            </select>
-          </div>
+          <IpoSelector
+            ipos={ipos}
+            value={selectedIpoId}
+            onChange={setSelectedIpoId}
+            showAll={true}
+            disabled={loading}
+          />
 
           {/* Search Credential Type Tabs */}
-          <div className="form-group">
-            <label>Search Credential Type</label>
-            <div className="search-type-tabs">
-              {['PAN', 'ApplicationNo', 'DematNo'].map(type => (
-                <button 
-                  key={type}
-                  type="button" 
-                  className={`tab-btn ${searchType === type ? 'active' : ''}`}
-                  onClick={() => handleTabChange(type)}
-                  disabled={loading}
-                >
-                  {type === 'PAN' ? 'PAN Number' : type === 'ApplicationNo' ? 'Application No' : 'Demat / DP ID'}
-                </button>
-              ))}
-            </div>
-          </div>
+          <SearchTabs
+            activeTab={searchType}
+            onChange={handleTabChange}
+            disabled={loading}
+          />
 
           {/* Search Input */}
           <div className="form-group">
@@ -136,34 +119,26 @@ const SingleChecker = ({
         {!loading && results && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
             {/* Summary Receipts Card */}
-            <div className="glass-card" style={{ padding: '1.25rem', display: 'flex', flexDirection: 'column', gap: '0.75rem', borderLeft: '4px solid var(--color-primary)' }}>
-              <div style={{ display: 'flex', justifycontent: 'space-between', alignItems: 'center' }}>
-                <span style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>Search Receipt</span>
-                <span className="gradient-text" style={{ fontWeight: 'bold', fontSize: '0.85rem' }}>{searchType}: {searchValue.toUpperCase()}</span>
-              </div>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '0.5rem', borderTop: '1px solid var(--border-color)', borderBottom: '1px solid var(--border-color)', padding: '0.75rem 0', textAlign: 'center' }}>
-                <div>
-                  <span style={{ display: 'block', fontSize: '0.75rem', color: 'var(--text-secondary)' }}>Scanned</span>
-                  <strong style={{ fontSize: '1.2rem' }}>{summary.total}</strong>
-                </div>
-                <div>
-                  <span style={{ display: 'block', fontSize: '0.75rem', color: 'var(--color-success)' }}>Allotted</span>
-                  <strong style={{ fontSize: '1.2rem', color: 'var(--color-success)' }}>{summary.allotted}</strong>
-                </div>
-                <div>
-                  <span style={{ display: 'block', fontSize: '0.75rem', color: 'var(--color-danger)' }}>Not Allotted</span>
-                  <strong style={{ fontSize: '1.2rem', color: 'var(--color-danger)' }}>{summary.notAllotted}</strong>
-                </div>
-              </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <StatsSummaryCard
+              title="Search Receipt"
+              subtitle={
+                <span className="gradient-text" style={{ fontWeight: 'bold', fontSize: '0.85rem' }}>
+                  {searchType}: {searchValue.toUpperCase()}
+                </span>
+              }
+              stats={{
+                total: summary.total,
+                allotted: summary.allotted,
+                notAllotted: summary.notAllotted,
+                amount: summary.totalAmount
+              }}
+              secondaryAction={
                 <button type="button" className="secondary-btn" style={{ padding: '0.4rem 0.75rem', fontSize: '0.8rem' }} onClick={handleReset}>
                   <RefreshCw size={14} /> Check Another
                 </button>
-                <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
-                  Total Allotted: <strong style={{ color: 'var(--color-success)' }}>₹{summary.totalAmount.toLocaleString('en-IN')}</strong>
-                </span>
-              </div>
-            </div>
+              }
+              borderLeftColor="var(--color-primary)"
+            />
 
             {results.map((res) => (
               <ResultCard 

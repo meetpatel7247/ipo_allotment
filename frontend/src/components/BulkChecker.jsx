@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import * as XLSX from 'xlsx';
 import axios from 'axios';
-import { Upload, Download, AlertTriangle, Trash2, RefreshCw } from 'lucide-react';
+import { Upload, AlertTriangle, Trash2, RefreshCw, Download } from 'lucide-react';
 import BulkResultsTable from './BulkResultsTable';
-import BulkStatsSummary from './BulkStatsSummary';
+import IpoSelector from './IpoSelector';
+import SearchTabs from './SearchTabs';
+import StatsSummaryCard from './StatsSummaryCard';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api';
 
@@ -104,20 +106,18 @@ const BulkChecker = ({ ipos, fetchHistory }) => {
             <p>Upload your data list (Excel/CSV) and check real allotment status from {selectedIpo ? selectedIpo.registrar : 'the registrar'}.</p>
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
-            <div className="form-group">
-              <label>Select IPO to Check *</label>
-              <select className="select-input" value={selectedIpoId} onChange={(e) => setSelectedIpoId(e.target.value)}>
-                {ipos.map(ipo => <option key={ipo._id} value={ipo._id}>{ipo.name} ({ipo.symbol}) — {ipo.registrar}</option>)}
-              </select>
-            </div>
-            <div className="form-group">
-              <label>Search Key Type</label>
-              <div className="search-type-tabs">
-                {['PAN', 'ApplicationNo', 'DematNo'].map(t => (
-                  <button key={t} type="button" className={`tab-btn ${searchType === t ? 'active' : ''}`} onClick={() => setSearchType(t)}>{t === 'PAN' ? 'PANs' : t === 'ApplicationNo' ? 'Apps' : 'Demats'}</button>
-                ))}
-              </div>
-            </div>
+            <IpoSelector
+              ipos={ipos}
+              value={selectedIpoId}
+              onChange={setSelectedIpoId}
+              showAll={false}
+              required={true}
+            />
+            <SearchTabs
+              activeTab={searchType}
+              onChange={setSearchType}
+              shortLabels={true}
+            />
             {!file ? (
               <div className="file-dropzone" onClick={() => document.getElementById('fileInput').click()} style={{ border: '2px dashed var(--border-color)', borderRadius: '12px', padding: '2.5rem', textAlign: 'center', cursor: 'pointer', background: 'rgba(0,0,0,0.1)' }}>
                 <input type="file" id="fileInput" style={{ display: 'none' }} accept=".xlsx,.xls,.csv" onChange={e => processFile(e.target.files[0])} />
@@ -148,7 +148,25 @@ const BulkChecker = ({ ipos, fetchHistory }) => {
 
       {!loading && results && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
-          <BulkStatsSummary stats={stats} selectedIpo={selectedIpo} handleExportExcel={handleExportExcel} handleClearFile={handleClearFile} />
+          <StatsSummaryCard
+            title="Allotment Summary Report"
+            subtitle={
+              <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
+                IPO: {selectedIpo?.name} ({selectedIpo?.symbol})
+              </span>
+            }
+            stats={stats}
+            actionButton={
+              <button type="button" className="submit-btn" onClick={handleExportExcel} style={{ marginTop: 0 }}>
+                <Download size={16} /> Download Report
+              </button>
+            }
+            secondaryAction={
+              <button type="button" className="secondary-btn" onClick={handleClearFile}>Check New File</button>
+            }
+            isBulk={true}
+            borderLeftColor="var(--color-success)"
+          />
           <BulkResultsTable results={results} searchType={searchType} headers={headers} selectedColumnIdx={selectedColumnIdx} />
         </div>
       )}
