@@ -26,7 +26,6 @@ function App() {
   const [results, setResults] = useState(null);
   const [errors, setErrors] = useState({});
   const [stats, setStats] = useState({ totalQueries: 0, allotmentRate: 0, activeIpos: 0 });
-  const [activeStep, setActiveStep] = useState(0);
   const [selectedBiddingIpo, setSelectedBiddingIpo] = useState(null);
   const [simulationSteps, setSimulationSteps] = useState([
     { name: 'KFintech Live API', resultStatus: 'pending' },
@@ -148,13 +147,13 @@ function App() {
 
   return (
     <div className="app-container">
-      <Header />
+      <Header onApplyClick={() => { setActiveMode('apply'); fetchBiddingIPOs(); }} />
       <StatsGrid ipoCount={ipos.length} queryCount={stats.totalQueries} successRate={stats.allotmentRate} />
 
       <div className="navigation-tabs-bar">
         <button type="button" className={`tab-btn ${activeMode === 'single' ? 'active' : ''}`} onClick={() => { setActiveMode('single'); handleReset(); }}>🔍 Single Account Checker</button>
         <button type="button" className={`tab-btn ${activeMode === 'bulk' ? 'active' : ''}`} onClick={() => setActiveMode('bulk')}>📊 Excel / CSV Bulk Verify</button>
-        <button type="button" className={`tab-btn highlight-tab ${activeMode === 'apply' ? 'active' : ''}`} onClick={() => { setActiveMode('apply'); fetchBiddingIPOs(); }}>🚀 Direct IPO Bidding</button>
+        <button type="button" className={`tab-btn highlight-tab ${activeMode === 'apply' ? 'active' : ''}`} onClick={() => { setActiveMode('apply'); fetchBiddingIPOs(); }}>🚀 Apply for IPO</button>
         <button type="button" className={`tab-btn ${activeMode === 'my-bids' ? 'active' : ''}`} onClick={() => setActiveMode('my-bids')}>📋 My Applications</button>
       </div>
 
@@ -174,9 +173,63 @@ function App() {
 
       {activeMode === 'apply' && (
         <main className="bidding-section">
-          <div className="section-title-wrap">
-            <h2>🚀 Live Open IPOs (Synced with Groww)</h2>
-            <p>Select an active Open IPO from Groww to apply with instant lot selection and UPI AutoPay Mandate!</p>
+          {/* Hero Banner — Groww / Angel One style */}
+          <div className="apply-hero-banner">
+            <div className="hero-content">
+              <h2>🚀 Apply for IPO Online</h2>
+              <p>Official ASBA UPI bidding — same as Groww & Angel One app. Select IPO, enter PAN/Demat, approve UPI mandate.</p>
+              <div className="hero-steps">
+                <span>① Select IPO</span>
+                <span>→</span>
+                <span>② Enter Details</span>
+                <span>→</span>
+                <span>③ UPI Mandate</span>
+                <span>→</span>
+                <span>④ Bid Confirmed</span>
+              </div>
+            </div>
+            <div className="hero-stats">
+              <div className="hero-stat">
+                <strong>{biddingIpos.filter(i => i.biddingStatus === 'OPEN').length}</strong>
+                <span>Open Now</span>
+              </div>
+              <div className="hero-stat">
+                <strong>{biddingIpos.filter(i => i.biddingStatus === 'UPCOMING').length}</strong>
+                <span>Upcoming</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Status Filter Tabs (Open / Upcoming / Closed) */}
+          <div className="status-filter-bar">
+            <button
+              type="button"
+              className={`status-tab-btn ${biddingStatusFilter === 'OPEN' ? 'active open-tab' : ''}`}
+              onClick={() => setBiddingStatusFilter('OPEN')}
+            >
+              🟢 Open IPOs ({biddingIpos.filter(i => i.biddingStatus === 'OPEN').length})
+            </button>
+            <button
+              type="button"
+              className={`status-tab-btn ${biddingStatusFilter === 'UPCOMING' ? 'active upcoming-tab' : ''}`}
+              onClick={() => setBiddingStatusFilter('UPCOMING')}
+            >
+              ⏰ Upcoming ({biddingIpos.filter(i => i.biddingStatus === 'UPCOMING').length})
+            </button>
+            <button
+              type="button"
+              className={`status-tab-btn ${biddingStatusFilter === 'CLOSED' ? 'active closed-tab' : ''}`}
+              onClick={() => setBiddingStatusFilter('CLOSED')}
+            >
+              🔴 Closed ({biddingIpos.filter(i => i.biddingStatus === 'CLOSED').length})
+            </button>
+            <button
+              type="button"
+              className={`status-tab-btn ${biddingStatusFilter === 'ALL' ? 'active' : ''}`}
+              onClick={() => setBiddingStatusFilter('ALL')}
+            >
+              All ({biddingIpos.length})
+            </button>
           </div>
 
           {/* Search & Category Filter Controls */}
@@ -259,7 +312,7 @@ function App() {
       )}
 
       <footer className="app-footer">
-        <p>© 2026 IPO Portal & Direct Bidding Platform. Live data from KFintech, Bigshare & MUFG registrars.</p>
+        <p>© 2026 IPO Apply & Allotment Portal. Live IPO data synced from Groww. ASBA UPI bidding supported.</p>
         <div className="footer-links">
           <a href="#privacy">Privacy Policy</a>
           <a href="#terms">Terms of Service</a>
