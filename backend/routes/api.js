@@ -3,6 +3,7 @@ import { getIPOs, getHistory, addHistory, clearAll, addIPO } from '../config/db.
 import { queryAllIPOs, queryBulkIPOs } from '../services/allotmentService.js';
 import { seedAllIPOs } from '../config/seed.js';
 import { fetchGrowwLiveOpenIPOs, fetchGrowwLiveClosedIPOs } from '../services/growwIpoService.js';
+import { dispatchUpiAutoPayMandate } from '../services/upiMandateService.js';
 
 const router = express.Router();
 
@@ -285,11 +286,15 @@ router.post('/apply', async (req, res) => {
     const appRandom = Math.floor(100000 + Math.random() * 900000);
     const applicationNo = `IPO2026-NSE-${appRandom}`;
 
-    // Generate Official NPCI ASBA IPO UPI Deep Link (Merchant Code 6211 for Securities / IPO Bidding)
-    const cleanIpoName = ipo.name.replace(/[^a-zA-Z0-9 ]/g, '').trim();
-    // Use official ASBA Escrow Payee VPA to prevent self-payment banking name resolution errors on GPay/PhonePe
-    const payeeVpa = 'groww.ipo@axisbank';
-    const upiDeepLink = `upi://pay?pa=${encodeURIComponent(payeeVpa)}&pn=${encodeURIComponent('Groww eIPO ASBA Block')}&mc=6211&am=${totalAmount}&tr=${applicationNo}&tn=${encodeURIComponent(`IPO Bid for ${cleanIpoName}`)}&cu=INR`;
+    // Dispatch Official NPCI ASBA UPI AutoPay Mandate
+    const mandateRes = await dispatchUpiAutoPayMandate({
+      upiId: cleanUpi,
+      totalAmount,
+      applicationNo,
+      ipoName: ipo.name
+    });
+
+    const upiDeepLink = mandateRes.upiDeepLink;
 
     const { addApplication } = await import('../config/db.js');
     const applicationRecord = await addApplication({
