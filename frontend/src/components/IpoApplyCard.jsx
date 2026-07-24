@@ -21,7 +21,11 @@ const IpoApplyCard = ({ ipo, onApplyClick }) => {
       </div>
 
       <div className="card-header-main">
-        <div className="company-icon">{ipo.name.charAt(0).toUpperCase()}</div>
+        {ipo.logoUrl ? (
+          <img src={ipo.logoUrl} alt={ipo.name} className="company-logo-img" onError={(e) => { e.target.style.display = 'none'; }} />
+        ) : (
+          <div className="company-icon">{ipo.name.charAt(0).toUpperCase()}</div>
+        )}
         <div>
           <h3 className="company-title">{ipo.name}</h3>
           <span className="symbol-code">BSE/NSE: {ipo.symbol}</span>

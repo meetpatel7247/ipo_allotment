@@ -2,6 +2,7 @@ import express from 'express';
 import { getIPOs, getHistory, addHistory, clearAll, addIPO } from '../config/db.js';
 import { queryAllIPOs, queryBulkIPOs } from '../services/allotmentService.js';
 import { seedAllIPOs } from '../config/seed.js';
+import { fetchGrowwLiveOpenIPOs, fetchGrowwLiveClosedIPOs } from '../services/growwIpoService.js';
 
 const router = express.Router();
 
@@ -139,9 +140,18 @@ router.post('/admin/seed', async (req, res) => {
 // 🚀 DIRECT IN-APP IPO BIDDING & APPLICATIONS
 // ==========================================
 
-// Route: Get IPOs available for Bidding / Pre-Apply
+// Route: Get IPOs available for Bidding / Pre-Apply (Fetched Live from Groww API)
 router.get('/apply/ipos', async (req, res) => {
   try {
+    const liveOpenIpos = await fetchGrowwLiveOpenIPOs();
+    const liveClosedIpos = await fetchGrowwLiveClosedIPOs();
+
+    if (liveOpenIpos && liveOpenIpos.length > 0) {
+      console.log(`✅ Returning ${liveOpenIpos.length} Live Open Groww IPOs & ${liveClosedIpos.length} Closed IPOs.`);
+      return res.json([...liveOpenIpos, ...liveClosedIpos]);
+    }
+
+    // Fallback to database IPOs if live API unavailable
     const ipos = await getIPOs();
     const biddingIpos = ipos.map((ipo, idx) => {
       const isSme = ipo.category === 'SME' || 
@@ -150,10 +160,6 @@ router.get('/apply/ipos', async (req, res) => {
                     ipo.name.toLowerCase().includes('industries') || 
                     (idx % 3 === 0);
       
-      // Groww / Angel One Status Mapping:
-      // OPEN: Active live bidding open
-      // UPCOMING: Pre-apply / opening soon
-      // CLOSED: Bidding ended / Allotted
       let statusType = 'OPEN';
       if (ipo.status === 'Closed' || ipo.status === 'Allotted' || idx % 4 === 3) {
         statusType = 'CLOSED';
