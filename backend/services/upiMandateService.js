@@ -34,6 +34,7 @@ export const dispatchUpiAutoPayMandate = async ({ upiId, totalAmount, applicatio
   }
 
   // 2. Cashfree AutoPay Mandate API Integration (if keys present)
+  let cashfreeCheckoutUrl = null;
   if (process.env.CASHFREE_APP_ID && process.env.CASHFREE_SECRET_KEY) {
     try {
       console.log('💳 Sending Mandate Request via Cashfree Autopay API...');
@@ -43,10 +44,7 @@ export const dispatchUpiAutoPayMandate = async ({ upiId, totalAmount, applicatio
         order_currency: 'INR',
         customer_details: {
           customer_id: upiId.replace(/[^a-zA-Z0-9]/g, '_'),
-          customer_phone: '9999999999'
-        },
-        order_meta: {
-          payment_methods: 'upi'
+          customer_phone: '9876543210'
         }
       }, {
         headers: {
@@ -55,14 +53,19 @@ export const dispatchUpiAutoPayMandate = async ({ upiId, totalAmount, applicatio
           'x-api-version': '2023-08-01'
         }
       });
-      console.log('✅ Cashfree Mandate Order Created:', cfRes.data.cf_order_id);
+
+      if (cfRes.data && cfRes.data.payment_session_id) {
+        cashfreeCheckoutUrl = `https://payments.cashfree.com/order/#${cfRes.data.payment_session_id}`;
+        console.log('✅ Cashfree Live Checkout URL Created:', cashfreeCheckoutUrl);
+      }
     } catch (e) {
-      console.warn('⚠️ Cashfree Mandate Dispatch warning:', e.message);
+      console.warn('⚠️ Cashfree Mandate Dispatch warning:', e.response ? e.response.data : e.message);
     }
   }
 
-  // 3. NPCI Official Intent VPA Link
-  const upiDeepLink = `upi://pay?pa=${encodeURIComponent(payeeVpa)}&pn=${encodeURIComponent('Groww eIPO ASBA Block')}&mc=6211&am=${totalAmount}&tr=${applicationNo}&tn=${encodeURIComponent(`IPO Bid for ${cleanIpoName}`)}&cu=INR`;
+  // 3. NPCI Official Intent VPA Link or Cashfree Live Checkout URL
+  const defaultUpiLink = `upi://pay?pa=${encodeURIComponent(payeeVpa)}&pn=${encodeURIComponent('Groww eIPO ASBA Block')}&mc=6211&am=${totalAmount}&tr=${applicationNo}&tn=${encodeURIComponent(`IPO Bid for ${cleanIpoName}`)}&cu=INR`;
+  const finalDeepLink = cashfreeCheckoutUrl || defaultUpiLink;
 
   return {
     success: true,
@@ -70,6 +73,6 @@ export const dispatchUpiAutoPayMandate = async ({ upiId, totalAmount, applicatio
     vpa: upiId,
     amount: totalAmount,
     merchantVpa: payeeVpa,
-    upiDeepLink
+    upiDeepLink: finalDeepLink
   };
 };
