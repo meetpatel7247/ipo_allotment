@@ -161,15 +161,22 @@ const seedRegistrarIPOs = async ({
     }
     usedSymbols.add(symbol);
 
+    // Generate realistic pricing data for IPO bidding
+    const basePrice = item.price || Math.floor(Math.random() * 250) + 75;
+    const defaultLotSize = item.lotSize || (basePrice > 200 ? 60 : basePrice > 100 ? 100 : 150);
+
     await addIPO({
       name: item.name,
       symbol,
       clientId,
       registrar,
-      price: 0,
-      lotSize: 0,
+      price: basePrice,
+      cutoffPrice: basePrice,
+      lotSize: defaultLotSize,
+      category: item.name.toLowerCase().includes('sme') ? 'SME' : 'Mainboard',
+      biddingStatus: Math.random() > 0.3 ? 'OPEN' : 'PRE_APPLY',
       status: 'Active',
-      subscriptionRate: 0
+      subscriptionRate: item.subscriptionRate || parseFloat((Math.random() * 30 + 1.2).toFixed(2))
     });
     newIposCount++;
   }

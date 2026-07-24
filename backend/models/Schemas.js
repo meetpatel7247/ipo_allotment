@@ -26,5 +26,25 @@ const HistorySchema = new mongoose.Schema({
   timestamp: { type: Date, default: Date.now }
 }, { timestamps: true });
 
+// IPO Bidding Application Schema
+const ApplicationSchema = new mongoose.Schema({
+  ipoId: { type: String, required: true },
+  ipoName: { type: String, required: true },
+  category: { type: String, default: 'Retail Individual Investor (RII)' },
+  panOrBoIdType: { type: String, enum: ['PAN', 'BO_ID'], required: true },
+  panOrBoIdValue: { type: String, required: true }, // masked for privacy
+  lotCount: { type: Number, required: true, default: 1 },
+  lotSize: { type: Number, required: true, default: 100 },
+  cutoffPrice: { type: Number, required: true },
+  totalAmount: { type: Number, required: true },
+  upiId: { type: String, required: true },
+  applicationNo: { type: String, required: true, unique: true },
+  mandateStatus: { type: String, enum: ['Mandate Sent', 'Approved', 'Submitted to Exchange'], default: 'Mandate Sent' },
+  upiDeepLink: { type: String },
+  timestamp: { type: Date, default: Date.now }
+}, { timestamps: true });
+
 export const IPO = mongoose.models.IPO || mongoose.model('IPO', IPOSchema);
 export const History = mongoose.models.History || mongoose.model('History', HistorySchema);
+export const Application = mongoose.models.Application || mongoose.model('Application', ApplicationSchema);
+

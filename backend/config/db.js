@@ -2,7 +2,7 @@ import mongoose from 'mongoose';
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import { IPO, History } from '../models/Schemas.js';
+import { IPO, History, Application } from '../models/Schemas.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -18,7 +18,17 @@ const initFallbackDB = () => {
     fs.mkdirSync(FALLBACK_DIR, { recursive: true });
   }
   if (!fs.existsSync(FALLBACK_FILE)) {
-    fs.writeFileSync(FALLBACK_FILE, JSON.stringify({ ipos: [], history: [] }, null, 2));
+    fs.writeFileSync(FALLBACK_FILE, JSON.stringify({ ipos: [], history: [], applications: [] }, null, 2));
+  } else {
+    try {
+      const data = JSON.parse(fs.readFileSync(FALLBACK_FILE, 'utf-8'));
+      if (!data.applications) {
+        data.applications = [];
+        fs.writeFileSync(FALLBACK_FILE, JSON.stringify(data, null, 2));
+      }
+    } catch (e) {
+      console.error(e);
+    }
   }
 };
 
@@ -27,10 +37,12 @@ const readFallbackDB = () => {
   initFallbackDB();
   try {
     const data = fs.readFileSync(FALLBACK_FILE, 'utf-8');
-    return JSON.parse(data);
+    const parsed = JSON.parse(data);
+    if (!parsed.applications) parsed.applications = [];
+    return parsed;
   } catch (error) {
     console.error(`Error reading JSON DB: ${error.message}`);
-    return { ipos: [], history: [] };
+    return { ipos: [], history: [], applications: [] };
   }
 };
 
@@ -121,11 +133,58 @@ export const addHistory = async (historyData) => {
   }
 };
 
+export const getApplications = async () => {
+  if (!isFallback) {
+    return await Application.find({}).sort({ createdAt: -1 });
+  } else {
+    const db = readFallbackDB();
+    return [...(db.applications || [])].reverse();
+  }
+};
+
+export const addApplication = async (appData) => {
+  if (!isFallback) {
+    const application = new Application(appData);
+    return await application.save();
+  } else {
+    const db = readFallbackDB();
+    if (!db.applications) db.applications = [];
+    const newApp = {
+      _id: `app_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+      ...appData,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+    db.applications.push(newApp);
+    writeFallbackDB(db);
+    return newApp;
+  }
+};
+
+export const updateApplicationStatus = async (applicationNo, status) => {
+  if (!isFallback) {
+    return await Application.findOneAndUpdate({ applicationNo }, { mandateStatus: status }, { new: true });
+  } else {
+    const db = readFallbackDB();
+    if (!db.applications) db.applications = [];
+    const appIndex = db.applications.findIndex(a => a.applicationNo === applicationNo);
+    if (appIndex !== -1) {
+      db.applications[appIndex].mandateStatus = status;
+      db.applications[appIndex].updatedAt = new Date().toISOString();
+      writeFallbackDB(db);
+      return db.applications[appIndex];
+    }
+    return null;
+  }
+};
+
 export const clearAll = async () => {
   if (!isFallback) {
     await IPO.deleteMany({});
     await History.deleteMany({});
+    await Application.deleteMany({});
   } else {
-    writeFallbackDB({ ipos: [], history: [] });
+    writeFallbackDB({ ipos: [], history: [], applications: [] });
   }
 };
+

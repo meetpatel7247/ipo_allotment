@@ -4,12 +4,16 @@ import Header from './components/Header';
 import StatsGrid from './components/StatsGrid';
 import SingleChecker from './components/SingleChecker';
 import BulkChecker from './components/BulkChecker';
+import IpoApplyCard from './components/IpoApplyCard';
+import IpoApplyModal from './components/IpoApplyModal';
+import MyApplications from './components/MyApplications';
 import './App.css';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api';
 
 function App() {
   const [ipos, setIpos] = useState([]);
+  const [biddingIpos, setBiddingIpos] = useState([]);
   const [history, setHistory] = useState([]);
   const [activeMode, setActiveMode] = useState('single');
   const [selectedIpoId, setSelectedIpoId] = useState('ALL');
@@ -20,6 +24,7 @@ function App() {
   const [errors, setErrors] = useState({});
   const [stats, setStats] = useState({ totalQueries: 0, allotmentRate: 0, activeIpos: 0 });
   const [activeStep, setActiveStep] = useState(0);
+  const [selectedBiddingIpo, setSelectedBiddingIpo] = useState(null);
   const [simulationSteps, setSimulationSteps] = useState([
     { name: 'KFintech Live API', resultStatus: 'pending' },
     { name: 'Bigshare Live API', resultStatus: 'pending' },
@@ -27,7 +32,7 @@ function App() {
   ]);
 
   useEffect(() => {
-    fetchIPOs(); fetchHistory();
+    fetchIPOs(); fetchHistory(); fetchBiddingIPOs();
   }, []);
 
   useEffect(() => {
@@ -39,6 +44,10 @@ function App() {
 
   const fetchIPOs = async () => {
     try { setIpos((await axios.get(`${API_BASE_URL}/ipos`)).data); } catch (e) { console.error(e); }
+  };
+
+  const fetchBiddingIPOs = async () => {
+    try { setBiddingIpos((await axios.get(`${API_BASE_URL}/apply/ipos`)).data); } catch (e) { console.error(e); }
   };
 
   const fetchHistory = async () => {
@@ -131,12 +140,14 @@ function App() {
       <Header />
       <StatsGrid ipoCount={ipos.length} queryCount={stats.totalQueries} successRate={stats.allotmentRate} />
 
-      <div style={{ display: 'flex', gap: '1rem', borderBottom: '1px solid var(--border-color)', paddingBottom: '1rem', marginTop: '0.5rem' }}>
-        <button type="button" className={`tab-btn ${activeMode === 'single' ? 'active' : ''}`} onClick={() => { setActiveMode('single'); handleReset(); }}>Single Account Checker</button>
-        <button type="button" className={`tab-btn ${activeMode === 'bulk' ? 'active' : ''}`} onClick={() => setActiveMode('bulk')}>Excel / CSV Bulk Verify</button>
+      <div className="navigation-tabs-bar">
+        <button type="button" className={`tab-btn ${activeMode === 'single' ? 'active' : ''}`} onClick={() => { setActiveMode('single'); handleReset(); }}>🔍 Single Account Checker</button>
+        <button type="button" className={`tab-btn ${activeMode === 'bulk' ? 'active' : ''}`} onClick={() => setActiveMode('bulk')}>📊 Excel / CSV Bulk Verify</button>
+        <button type="button" className={`tab-btn highlight-tab ${activeMode === 'apply' ? 'active' : ''}`} onClick={() => { setActiveMode('apply'); fetchBiddingIPOs(); }}>🚀 Direct IPO Bidding</button>
+        <button type="button" className={`tab-btn ${activeMode === 'my-bids' ? 'active' : ''}`} onClick={() => setActiveMode('my-bids')}>📋 My Applications</button>
       </div>
 
-      {activeMode === 'single' ? (
+      {activeMode === 'single' && (
         <SingleChecker
           ipos={ipos} loading={loading} errors={errors} searchType={searchType} searchValue={searchValue}
           selectedIpoId={selectedIpoId} results={results} handleCheckAllotment={handleCheckAllotment}
@@ -144,12 +155,49 @@ function App() {
           handleValueChange={handleValueChange} setSelectedIpoId={setSelectedIpoId} handleReset={handleReset} summary={summary}
           activeStep={activeStep} simulationSteps={simulationSteps}
         />
-      ) : (
+      )}
+
+      {activeMode === 'bulk' && (
         <main><BulkChecker ipos={ipos} fetchHistory={fetchHistory} /></main>
       )}
 
+      {activeMode === 'apply' && (
+        <main className="bidding-section">
+          <div className="section-title-wrap">
+            <h2>🚀 Live & Pre-Apply IPOs (Direct In-App Bidding)</h2>
+            <p>Select an IPO, pick your lot count, enter your PAN or 16-digit Demat BO ID, and complete UPI AutoPay Mandate!</p>
+          </div>
+          <div className="ipo-cards-grid">
+            {biddingIpos.length === 0 ? (
+              <p className="no-ipos-msg">Loading active IPOs for bidding...</p>
+            ) : (
+              biddingIpos.map((bipo) => (
+                <IpoApplyCard
+                  key={bipo._id}
+                  ipo={bipo}
+                  onApplyClick={(ipoToApply) => setSelectedBiddingIpo(ipoToApply)}
+                />
+              ))
+            )}
+          </div>
+        </main>
+      )}
+
+      {activeMode === 'my-bids' && (
+        <main><MyApplications /></main>
+      )}
+
+      {/* Apply Modal */}
+      {selectedBiddingIpo && (
+        <IpoApplyModal
+          ipo={selectedBiddingIpo}
+          onClose={() => setSelectedBiddingIpo(null)}
+          onApplicationSubmitted={() => { fetchBiddingIPOs(); }}
+        />
+      )}
+
       <footer className="app-footer">
-        <p>© 2026 IPO Allotment Status Portal. Live data from KFintech, Bigshare & MUFG registrars.</p>
+        <p>© 2026 IPO Portal & Direct Bidding Platform. Live data from KFintech, Bigshare & MUFG registrars.</p>
         <div className="footer-links">
           <a href="#privacy">Privacy Policy</a>
           <a href="#terms">Terms of Service</a>
@@ -161,3 +209,4 @@ function App() {
 }
 
 export default App;
+
