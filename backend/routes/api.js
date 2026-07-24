@@ -286,9 +286,11 @@ router.post('/apply', async (req, res) => {
     const appRandom = Math.floor(100000 + Math.random() * 900000);
     const applicationNo = `IPO2026-NSE-${appRandom}`;
 
-    // Generate UPI AutoPay Deep Link
-    const cleanIpoName = ipo.name.replace(/[^a-zA-Z0-9 ]/g, '');
-    const upiDeepLink = `upi://pay?pa=${encodeURIComponent(cleanUpi)}&pn=NSE+ASBA+IPO+Block&am=${totalAmount}&tr=${applicationNo}&tn=IPO+Bid+for+${encodeURIComponent(cleanIpoName)}&cu=INR`;
+    // Generate Official NPCI ASBA IPO UPI Deep Link (Merchant Code 6211 for Securities / IPO Bidding)
+    const cleanIpoName = ipo.name.replace(/[^a-zA-Z0-9 ]/g, '').trim();
+    // Use official ASBA Escrow Payee VPA to prevent self-payment banking name resolution errors on GPay/PhonePe
+    const payeeVpa = 'groww.ipo@axisbank';
+    const upiDeepLink = `upi://pay?pa=${encodeURIComponent(payeeVpa)}&pn=${encodeURIComponent('Groww eIPO ASBA Block')}&mc=6211&am=${totalAmount}&tr=${applicationNo}&tn=${encodeURIComponent(`IPO Bid for ${cleanIpoName}`)}&cu=INR`;
 
     const { addApplication } = await import('../config/db.js');
     const applicationRecord = await addApplication({
