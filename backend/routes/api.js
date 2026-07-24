@@ -144,11 +144,10 @@ router.post('/admin/seed', async (req, res) => {
 router.get('/apply/ipos', async (req, res) => {
   try {
     const liveOpenIpos = await fetchGrowwLiveOpenIPOs();
-    const liveClosedIpos = await fetchGrowwLiveClosedIPOs();
 
     if (liveOpenIpos && liveOpenIpos.length > 0) {
-      console.log(`✅ Serving ${liveOpenIpos.length} Live Open Groww IPOs.`);
-      return res.json([...liveOpenIpos, ...(liveClosedIpos || [])]);
+      console.log(`✅ Serving EXACTLY ${liveOpenIpos.length} Live Open Groww IPOs.`);
+      return res.json(liveOpenIpos);
     }
 
     // Fallback to database IPOs if live API is temporarily unreachable

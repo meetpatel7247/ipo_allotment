@@ -175,44 +175,36 @@ function App() {
       {activeMode === 'apply' && (
         <main className="bidding-section">
           <div className="section-title-wrap">
-            <h2>🚀 Apply for Open IPOs (Groww & Angel One Style)</h2>
-            <p>Select an OPEN IPO to place your bid with instant lot pricing and UPI AutoPay Mandate!</p>
-          </div>
-
-          {/* Status Tabs (Groww Style: OPEN default!) */}
-          <div className="status-filter-bar">
-            <button
-              type="button"
-              className={`status-tab-btn open-tab ${biddingStatusFilter === 'OPEN' ? 'active' : ''}`}
-              onClick={() => setBiddingStatusFilter('OPEN')}
-            >
-              🟢 OPEN IPOs ({biddingIpos.filter(i => i.biddingStatus === 'OPEN').length})
-            </button>
-            <button
-              type="button"
-              className={`status-tab-btn upcoming-tab ${biddingStatusFilter === 'UPCOMING' ? 'active' : ''}`}
-              onClick={() => setBiddingStatusFilter('UPCOMING')}
-            >
-              ⏰ UPCOMING ({biddingIpos.filter(i => i.biddingStatus === 'UPCOMING').length})
-            </button>
-            <button
-              type="button"
-              className={`status-tab-btn closed-tab ${biddingStatusFilter === 'CLOSED' ? 'active' : ''}`}
-              onClick={() => setBiddingStatusFilter('CLOSED')}
-            >
-              🔴 CLOSED ({biddingIpos.filter(i => i.biddingStatus === 'CLOSED').length})
-            </button>
-            <button
-              type="button"
-              className={`status-tab-btn ${biddingStatusFilter === 'ALL' ? 'active' : ''}`}
-              onClick={() => setBiddingStatusFilter('ALL')}
-            >
-              ALL STATUS ({biddingIpos.length})
-            </button>
+            <h2>🚀 Live Open IPOs (Synced with Groww)</h2>
+            <p>Select an active Open IPO from Groww to apply with instant lot selection and UPI AutoPay Mandate!</p>
           </div>
 
           {/* Search & Category Filter Controls */}
           <div className="bidding-filter-bar">
+            <div className="category-filter-tabs">
+              <button
+                type="button"
+                className={`cat-tab ${biddingCategory === 'ALL' ? 'active' : ''}`}
+                onClick={() => setBiddingCategory('ALL')}
+              >
+                All Open IPOs ({biddingIpos.length})
+              </button>
+              <button
+                type="button"
+                className={`cat-tab ${biddingCategory === 'Mainboard' ? 'active' : ''}`}
+                onClick={() => setBiddingCategory('Mainboard')}
+              >
+                🏢 Mainboard ({biddingIpos.filter(i => i.category === 'Mainboard').length})
+              </button>
+              <button
+                type="button"
+                className={`cat-tab ${biddingCategory === 'SME' ? 'active' : ''}`}
+                onClick={() => setBiddingCategory('SME')}
+              >
+                🚀 SME ({biddingIpos.filter(i => i.category === 'SME').length})
+              </button>
+            </div>
+
             <div className="search-input-wrap">
               <span className="search-icon">🔍</span>
               <input
@@ -226,42 +218,18 @@ function App() {
                 <button type="button" className="clear-search-btn" onClick={() => setBiddingSearch('')}>✕</button>
               )}
             </div>
-
-            <div className="category-filter-tabs">
-              <button
-                type="button"
-                className={`cat-tab ${biddingCategory === 'ALL' ? 'active' : ''}`}
-                onClick={() => setBiddingCategory('ALL')}
-              >
-                All Categories
-              </button>
-              <button
-                type="button"
-                className={`cat-tab ${biddingCategory === 'Mainboard' ? 'active' : ''}`}
-                onClick={() => setBiddingCategory('Mainboard')}
-              >
-                🏢 Mainboard
-              </button>
-              <button
-                type="button"
-                className={`cat-tab ${biddingCategory === 'SME' ? 'active' : ''}`}
-                onClick={() => setBiddingCategory('SME')}
-              >
-                🚀 SME
-              </button>
-            </div>
           </div>
 
           <div className="ipo-cards-grid">
             {filteredBiddingIpos.length === 0 ? (
               <div className="no-bidding-found">
-                <p>🔍 No IPOs found under {biddingStatusFilter} filter.</p>
+                <p>🔍 No live open IPOs found matching your search.</p>
                 <button 
                   type="button" 
                   className="reset-filter-btn" 
                   onClick={() => { setBiddingSearch(''); setBiddingCategory('ALL'); setBiddingStatusFilter('OPEN'); }}
                 >
-                  Show Open IPOs
+                  Show All Live Open IPOs
                 </button>
               </div>
             ) : (
