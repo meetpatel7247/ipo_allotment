@@ -141,84 +141,116 @@
           </form>
         ) : (
           <div className="modal-body mandate-success-body">
-            <div className="success-badge-icon">✅</div>
-            <h3>Application Bidding Registered!</h3>
-            <p className="app-no-tag">Application Reference No: <strong>{submittedApp.applicationNo}</strong></p>
+            {!mandateApproved ? (
+              <div className="groww-timeline-box">
+                <div className="timeline-header">
+                  <div className="pulse-icon">⏳</div>
+                  <div>
+                    <h3>IPO Application Submitted</h3>
+                    <p className="app-no-tag">App No: <strong>{submittedApp.applicationNo}</strong></p>
+                  </div>
+                </div>
 
-            {/* Groww / Angel One Style Mandate Dispatch Banner */}
-            <div className="autopay-dispatch-banner">
-              <div className="banner-top">
-                <span className="app-icon">{upiApp.icon}</span>
-                <div>
-                  <h4>AutoPay Mandate Sent to {upiApp.name}</h4>
-                  <p className="vpa-text">Target VPA: <code>{submittedApp.upiId}</code></p>
+                {/* Groww 3-Step Progress Timeline */}
+                <div className="groww-steps-timeline">
+                  <div className="timeline-step step-done">
+                    <div className="step-num">1</div>
+                    <div className="step-content">
+                      <h4>Application Placed</h4>
+                      <p>Bid for {submittedApp.lotCount} Lot ({submittedApp.lotCount * submittedApp.lotSize} Shares) registered</p>
+                    </div>
+                  </div>
+
+                  <div className="timeline-step step-active">
+                    <div className="step-num animated-pulse">2</div>
+                    <div className="step-content">
+                      <h4>AutoPay Mandate Sent to {upiApp.name}</h4>
+                      <p>Request sent to <code>{submittedApp.upiId}</code> for blocking <strong>₹{submittedApp.totalAmount.toLocaleString('en-IN')}</strong></p>
+                    </div>
+                  </div>
+
+                  <div className="timeline-step step-pending">
+                    <div className="step-num">3</div>
+                    <div className="step-content">
+                      <h4>Exchange Confirmation</h4>
+                      <p>Awaiting UPI AutoPay PIN authorization</p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Groww Style Mandate Instructions Card */}
+                <div className="groww-instruction-card">
+                  <div className="inst-top">
+                    <span className="app-icon">{upiApp.icon}</span>
+                    <div>
+                      <h4>Open {upiApp.name} to Pay & Approve</h4>
+                      <p className="vpa-text">Target VPA: <code>{submittedApp.upiId}</code></p>
+                    </div>
+                  </div>
+                  <p className="inst-desc">
+                    1. Open your <strong>{upiApp.name}</strong> app on your mobile.<br />
+                    2. Go to <strong>Profile &gt; AutoPay / Mandates</strong> section.<br />
+                    3. Enter your <strong>UPI PIN</strong> to authorize fund block of <strong>₹{submittedApp.totalAmount.toLocaleString('en-IN')}</strong>.
+                  </p>
+                </div>
+
+                <div className="action-buttons-wrap">
+                  <button 
+                    type="button" 
+                    className="btn-upi-direct"
+                    style={{ background: upiApp.color }}
+                    onClick={() => {
+                      if (/Android|iPhone|iPad|iPod/i.test(navigator.userAgent)) {
+                        window.location.href = submittedApp.upiDeepLink;
+                      } else {
+                        navigator.clipboard.writeText(submittedApp.upiDeepLink);
+                        alert(`📋 AutoPay link copied! Open ${upiApp.name} on your phone or scan QR code above.`);
+                      }
+                    }}
+                  >
+                    ⚡ Open {upiApp.name} App to Pay
+                  </button>
+
+                  <button type="button" className="btn-approve-sim" onClick={handleSimulateMandateApprove}>
+                    ✅ I have Authorized Payment / Approve AutoPay Now
+                  </button>
                 </div>
               </div>
-              <p className="banner-desc">
-                An official NPCI AutoPay mandate request of <strong>₹{submittedApp.totalAmount.toLocaleString('en-IN')}</strong> has been pushed to your <strong>{upiApp.name}</strong> app. Please open your app to authorize the ASBA fund block.
-              </p>
-            </div>
+            ) : (
+              /* Groww Step 3: SUCCESS CONFIRMATION STATE */
+              <div className="groww-success-confirmation">
+                <div className="success-badge-icon">🎉</div>
+                <h3 className="text-green">AutoPay Mandate Successful!</h3>
+                <p className="success-sub">Fund of <strong>₹{submittedApp.totalAmount.toLocaleString('en-IN')}</strong> successfully blocked at bank & Bid submitted to Stock Exchange (NSE/BSE).</p>
 
-            <div className="app-summary-card">
-              <div className="sum-row">
-                <span>IPO Company:</span>
-                <strong>{submittedApp.ipoName}</strong>
-              </div>
-              <div className="sum-row">
-                <span>Bid Quantity:</span>
-                <strong>{submittedApp.lotCount} Lot ({submittedApp.lotCount * submittedApp.lotSize} Shares)</strong>
-              </div>
-              <div className="sum-row">
-                <span>Amount to Block:</span>
-                <strong className="text-green">₹{submittedApp.totalAmount.toLocaleString('en-IN')}</strong>
-              </div>
-              <div className="sum-row">
-                <span>Applicant Demat:</span>
-                <strong>{submittedApp.panOrBoIdType}: {submittedApp.panOrBoIdValue}</strong>
-              </div>
-            </div>
-
-            {/* QR Code & Mandate Actions */}
-            <div className="mandate-step-box">
-              <h4>📲 Quick Mandate Authorization</h4>
-              
-              <div className="upi-qr-wrap">
-                <img 
-                  src={`https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(submittedApp.upiDeepLink)}`} 
-                  alt="UPI Payment QR Code" 
-                  className="upi-qr-img"
-                />
-                <span className="qr-hint">📷 Scan QR with {upiApp.name} to Approve</span>
-              </div>
-
-              <div className="action-buttons-wrap">
-                <button 
-                  type="button" 
-                  className="btn-upi-direct"
-                  style={{ background: upiApp.color }}
-                  onClick={() => {
-                    if (/Android|iPhone|iPad|iPod/i.test(navigator.userAgent)) {
-                      window.location.href = submittedApp.upiDeepLink;
-                    } else {
-                      navigator.clipboard.writeText(submittedApp.upiDeepLink);
-                      alert(`📋 AutoPay link copied! Open ${upiApp.name} on your phone or scan QR code above.`);
-                    }
-                  }}
-                >
-                  ⚡ Open in {upiApp.name} / Copy Link
-                </button>
-
-                {!mandateApproved ? (
-                  <button type="button" className="btn-approve-sim" onClick={handleSimulateMandateApprove}>
-                    ✅ Approve AutoPay Mandate Now (Simulate PIN Approval)
-                  </button>
-                ) : (
-                  <div className="approved-badge">
-                    🎉 Mandate Authorized! ASBA Fund Blocked at SCSB Bank & Confirmed to Exchange!
+                <div className="app-summary-card">
+                  <div className="sum-row">
+                    <span>Application No:</span>
+                    <strong>{submittedApp.applicationNo}</strong>
                   </div>
-                )}
+                  <div className="sum-row">
+                    <span>IPO Company:</span>
+                    <strong>{submittedApp.ipoName}</strong>
+                  </div>
+                  <div className="sum-row">
+                    <span>Applied Quantity:</span>
+                    <strong>{submittedApp.lotCount} Lot ({submittedApp.lotCount * submittedApp.lotSize} Shares)</strong>
+                  </div>
+                  <div className="sum-row">
+                    <span>Blocked Amount:</span>
+                    <strong className="text-green">₹{submittedApp.totalAmount.toLocaleString('en-IN')}</strong>
+                  </div>
+                  <div className="sum-row">
+                    <span>Payment Status:</span>
+                    <strong className="text-green">✅ AutoPay Mandate Approved</strong>
+                  </div>
+                </div>
+
+                <div className="approved-badge-box">
+                  ✅ Your IPO application is successfully placed. Allotment status will be updated on allotment date.
+                </div>
               </div>
-            </div>
+            )}
 
             <div className="modal-footer">
               <button type="button" className="btn-primary" onClick={onClose}>Done</button>
