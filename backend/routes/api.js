@@ -198,15 +198,24 @@ router.post('/apply', async (req, res) => {
       return res.status(400).json({ error: 'All fields (ipoId, panOrBoIdType, panOrBoIdValue, lotCount, upiId) are required.' });
     }
 
-    // Find IPO
-    const ipos = await getIPOs();
-    const ipo = ipos.find(i => String(i._id) === String(ipoId));
+    // Find IPO in Local DB or Groww Live List
+    const dbIpos = await getIPOs();
+    let ipo = dbIpos.find(i => String(i._id) === String(ipoId) || String(i.symbol) === String(ipoId));
+
+    if (!ipo) {
+      // Look up in live Groww IPO list
+      const growwOpen = await fetchGrowwLiveOpenIPOs();
+      const growwClosed = await fetchGrowwLiveClosedIPOs();
+      const allGroww = [...(growwOpen || []), ...(growwClosed || [])];
+      ipo = allGroww.find(i => String(i._id) === String(ipoId) || String(i.symbol) === String(ipoId));
+    }
+
     if (!ipo) {
       return res.status(404).json({ error: 'Selected IPO not found.' });
     }
 
     // Strict Groww / Angel One rule: Only OPEN IPOs can be applied for
-    if (ipo.status === 'Closed' || ipo.status === 'Allotted') {
+    if (ipo.biddingStatus === 'CLOSED' || ipo.status === 'Closed' || ipo.status === 'Allotted') {
       return res.status(400).json({ error: 'This IPO is CLOSED. You can only apply for OPEN IPOs.' });
     }
 
