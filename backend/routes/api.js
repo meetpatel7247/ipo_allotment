@@ -2,7 +2,7 @@ import express from 'express';
 import { getIPOs, getHistory, addHistory, clearAll, addIPO } from '../config/db.js';
 import { queryAllIPOs, queryBulkIPOs } from '../services/allotmentService.js';
 import { seedAllIPOs } from '../config/seed.js';
-import { fetchGrowwLiveOpenIPOs, fetchGrowwLiveClosedIPOs } from '../services/growwIpoService.js';
+import { fetchGrowwLiveOpenIPOs, fetchGrowwLiveClosedIPOs, submitGrowwDirectIpoBid } from '../services/growwIpoService.js';
 import { dispatchUpiAutoPayMandate } from '../services/upiMandateService.js';
 
 const router = express.Router();
@@ -286,7 +286,18 @@ router.post('/apply', async (req, res) => {
     const appRandom = Math.floor(100000 + Math.random() * 900000);
     const applicationNo = `IPO2026-NSE-${appRandom}`;
 
-    // Dispatch Official NPCI ASBA UPI AutoPay Mandate
+    // Dispatch Direct Groww Primary Market Bidding API & NPCI ASBA UPI AutoPay Mandate
+    await submitGrowwDirectIpoBid({
+      symbol: ipo.symbol,
+      companyCode: ipo._id?.replace('groww_open_', ''),
+      category,
+      lotCount: lots,
+      lotSize,
+      price: cutoffPrice,
+      upiId: cleanUpi,
+      panOrBoIdValue: cleanId
+    });
+
     const mandateRes = await dispatchUpiAutoPayMandate({
       upiId: cleanUpi,
       totalAmount,
