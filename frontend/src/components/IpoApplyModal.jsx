@@ -1,93 +1,23 @@
-import React, { useState } from 'react';
-import axios from 'axios';
-
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api';
-
-const IpoApplyModal = ({ ipo, onClose, onApplicationSubmitted }) => {
-  const [lotCount, setLotCount] = useState(1);
-  const [category, setCategory] = useState('Retail Individual Investor (RII)');
-  const [idType, setIdType] = useState('PAN'); // 'PAN' or 'BO_ID'
-  const [idValue, setIdValue] = useState('');
-  const [upiId, setUpiId] = useState('');
-  const [submitting, setSubmitting] = useState(false);
-  const [error, setError] = useState('');
-  const [submittedApp, setSubmittedApp] = useState(null);
-  const [mandateApproved, setMandateApproved] = useState(false);
-
-  if (!ipo) return null;
-
-  const price = ipo.cutoffPrice || ipo.price || 150;
-  const lotSize = ipo.lotSize || 100;
-  const totalShares = lotCount * lotSize;
-  const totalAmount = totalShares * price;
-
-  const handleIdChange = (e) => {
-    let val = e.target.value;
-    if (idType === 'PAN') {
-      val = val.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 10);
-    } else {
-      val = val.replace(/[^0-9]/g, '').slice(0, 16);
+  // Helper to detect UPI App Provider from handle
+  const getUpiAppDetails = (handle) => {
+    if (!handle) return { name: 'UPI App', icon: '📲', color: '#10b981' };
+    const lower = handle.toLowerCase();
+    if (lower.includes('@okicici') || lower.includes('@okhdfcbank') || lower.includes('@okaxis') || lower.includes('@oksbi')) {
+      return { name: 'Google Pay (GPay)', icon: '🟦', color: '#4285F4' };
     }
-    setIdValue(val);
-    setError('');
+    if (lower.includes('@ybl') || lower.includes('@ibl') || lower.includes('@axl')) {
+      return { name: 'PhonePe', icon: '🟪', color: '#5f259f' };
+    }
+    if (lower.includes('@paytm')) {
+      return { name: 'Paytm', icon: '🔷', color: '#00baf2' };
+    }
+    if (lower.includes('@bhim') || lower.includes('@upi')) {
+      return { name: 'BHIM UPI', icon: '🇮🇳', color: '#f59e0b' };
+    }
+    return { name: 'UPI App', icon: '📲', color: '#10b981' };
   };
 
-  const handleUpiChange = (e) => {
-    setUpiId(e.target.value.toLowerCase());
-    setError('');
-  };
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setError('');
-
-    if (idType === 'PAN' && (!/^[A-Z]{5}[0-9]{4}[A-Z]{1}$/.test(idValue))) {
-      return setError('Invalid PAN Card format. Must be 10 characters (e.g. ABCDE1234F).');
-    }
-    if (idType === 'BO_ID' && (!/^\d{16}$/.test(idValue))) {
-      return setError('Invalid Demat BO ID format. Must be exactly 16 digits (DP ID + Client ID).');
-    }
-    if (!upiId.includes('@') || upiId.trim().length < 5) {
-      return setError('Enter a valid UPI ID (e.g. username@okhdfcbank or 9876543210@paytm).');
-    }
-
-    try {
-      setSubmitting(true);
-      const res = await axios.post(`${API_BASE_URL}/apply`, {
-        ipoId: ipo._id,
-        category,
-        panOrBoIdType: idType,
-        panOrBoIdValue: idValue,
-        lotCount,
-        upiId: upiId.trim()
-      });
-
-      if (res.data.success) {
-        setSubmittedApp(res.data.application);
-        if (onApplicationSubmitted) onApplicationSubmitted();
-      } else {
-        setError(res.data.error || 'Failed to submit application.');
-      }
-    } catch (err) {
-      setError(err.response?.data?.error || 'Server error while processing IPO application.');
-    } finally {
-      setSubmitting(false);
-    }
-  };
-
-  const handleSimulateMandateApprove = async () => {
-    if (!submittedApp) return;
-    try {
-      await axios.post(`${API_BASE_URL}/apply/approve-mandate`, {
-        applicationNo: submittedApp.applicationNo,
-        status: 'Approved'
-      });
-      setMandateApproved(true);
-      if (onApplicationSubmitted) onApplicationSubmitted();
-    } catch (e) {
-      console.error(e);
-    }
-  };
+  const upiApp = submittedApp ? getUpiAppDetails(submittedApp.upiId) : null;
 
   return (
     <div className="modal-overlay">
@@ -190,91 +120,101 @@ const IpoApplyModal = ({ ipo, onClose, onApplicationSubmitted }) => {
 
             {/* UPI ID for AutoPay Mandate */}
             <div className="form-group">
-              <label>UPI ID for AutoPay Mandate Block</label>
+              <label>UPI VPA ID for AutoPay Mandate Block</label>
               <input
                 type="text"
                 className="input-field"
-                placeholder="e.g. username@okhdfcbank or 9876543210@paytm"
+                placeholder="e.g. username@okhdfcbank, 9876543210@paytm, or user@ybl"
                 value={upiId}
                 onChange={handleUpiChange}
                 required
               />
-              <span className="field-hint">💡 An official UPI AutoPay payment block link will be sent to your UPI App (PhonePe, GPay, Paytm).</span>
+              <span className="field-hint">💡 Official NPCI AutoPay Mandate request will be sent to your GPay / PhonePe / Paytm app.</span>
             </div>
 
             <div className="modal-footer">
               <button type="button" className="btn-secondary" onClick={onClose}>Cancel</button>
               <button type="submit" className="btn-primary" disabled={submitting}>
-                {submitting ? 'Processing Bid Application...' : `Submit Application (₹${totalAmount.toLocaleString('en-IN')})`}
+                {submitting ? 'Dispatching NPCI AutoPay Mandate...' : `Submit Application (₹${totalAmount.toLocaleString('en-IN')})`}
               </button>
             </div>
           </form>
         ) : (
           <div className="modal-body mandate-success-body">
             <div className="success-badge-icon">✅</div>
-            <h3>Application Registered Successfully!</h3>
+            <h3>Application Bidding Registered!</h3>
             <p className="app-no-tag">Application Reference No: <strong>{submittedApp.applicationNo}</strong></p>
+
+            {/* Groww / Angel One Style Mandate Dispatch Banner */}
+            <div className="autopay-dispatch-banner">
+              <div className="banner-top">
+                <span className="app-icon">{upiApp.icon}</span>
+                <div>
+                  <h4>AutoPay Mandate Sent to {upiApp.name}</h4>
+                  <p className="vpa-text">Target VPA: <code>{submittedApp.upiId}</code></p>
+                </div>
+              </div>
+              <p className="banner-desc">
+                An official NPCI AutoPay mandate request of <strong>₹{submittedApp.totalAmount.toLocaleString('en-IN')}</strong> has been pushed to your <strong>{upiApp.name}</strong> app. Please open your app to authorize the ASBA fund block.
+              </p>
+            </div>
 
             <div className="app-summary-card">
               <div className="sum-row">
-                <span>IPO Name:</span>
+                <span>IPO Company:</span>
                 <strong>{submittedApp.ipoName}</strong>
               </div>
               <div className="sum-row">
-                <span>Applied Quantity:</span>
+                <span>Bid Quantity:</span>
                 <strong>{submittedApp.lotCount} Lot ({submittedApp.lotCount * submittedApp.lotSize} Shares)</strong>
               </div>
               <div className="sum-row">
-                <span>Total Amount Blocked:</span>
+                <span>Amount to Block:</span>
                 <strong className="text-green">₹{submittedApp.totalAmount.toLocaleString('en-IN')}</strong>
               </div>
               <div className="sum-row">
-                <span>Applicant Details:</span>
+                <span>Applicant Demat:</span>
                 <strong>{submittedApp.panOrBoIdType}: {submittedApp.panOrBoIdValue}</strong>
-              </div>
-              <div className="sum-row">
-                <span>UPI Handle:</span>
-                <strong>{submittedApp.upiId}</strong>
               </div>
             </div>
 
+            {/* QR Code & Mandate Actions */}
             <div className="mandate-step-box">
-              <h4>📲 UPI AutoPay Mandate Block</h4>
-              <p>A payment mandate notification has been dispatched to <strong>{submittedApp.upiId}</strong>.</p>
+              <h4>📲 Quick Mandate Authorization</h4>
               
-              {/* QR Code for Desktop Scanner */}
               <div className="upi-qr-wrap">
                 <img 
                   src={`https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(submittedApp.upiDeepLink)}`} 
                   alt="UPI Payment QR Code" 
                   className="upi-qr-img"
                 />
-                <span className="qr-hint">📷 Scan with PhonePe / GPay / Paytm to Approve</span>
+                <span className="qr-hint">📷 Scan QR with {upiApp.name} to Approve</span>
               </div>
 
               <div className="action-buttons-wrap">
                 <button 
                   type="button" 
                   className="btn-upi-direct"
+                  style={{ background: upiApp.color }}
                   onClick={() => {
                     if (/Android|iPhone|iPad|iPod/i.test(navigator.userAgent)) {
                       window.location.href = submittedApp.upiDeepLink;
                     } else {
                       navigator.clipboard.writeText(submittedApp.upiDeepLink);
-                      alert('📋 UPI Payment Link copied to clipboard! You can paste it into your mobile browser or scan the QR Code above.');
+                      alert(`📋 AutoPay link copied! Open ${upiApp.name} on your phone or scan QR code above.`);
                     }
                   }}
                 >
-                  ⚡ Open in UPI App / Copy Link
+                  ⚡ Open in {upiApp.name} / Copy Link
                 </button>
 
                 {!mandateApproved ? (
                   <button type="button" className="btn-approve-sim" onClick={handleSimulateMandateApprove}>
-                    ✅ Approve Mandate Now (Simulate Approval)
+                    ✅ Approve AutoPay Mandate Now (Simulate PIN Approval)
                   </button>
                 ) : (
                   <div className="approved-badge">
-                    🎉 Mandate Approved & Bid Confirmed to Stock Exchange!
+                    🎉 Mandate Authorized! ASBA Fund Blocked at SCSB Bank & Confirmed to Exchange!
                   </div>
                 )}
               </div>
@@ -291,3 +231,4 @@ const IpoApplyModal = ({ ipo, onClose, onApplicationSubmitted }) => {
 };
 
 export default IpoApplyModal;
+
