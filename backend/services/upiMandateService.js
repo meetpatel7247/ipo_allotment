@@ -63,16 +63,15 @@ export const dispatchUpiAutoPayMandate = async ({ upiId, totalAmount, applicatio
     }
   }
 
-  // 3. NPCI Official Intent VPA Link or Cashfree Live Checkout URL
+  // 3. NPCI Official Intent VPA Link (Identical to Groww's Direct Exchange Mandate Bidding System)
   const defaultUpiLink = `upi://pay?pa=${encodeURIComponent(payeeVpa)}&pn=${encodeURIComponent('Groww eIPO ASBA Block')}&mc=6211&am=${totalAmount}&tr=${applicationNo}&tn=${encodeURIComponent(`IPO Bid for ${cleanIpoName}`)}&cu=INR`;
-  const finalDeepLink = cashfreeCheckoutUrl || defaultUpiLink;
-
+  
   return {
     success: true,
     status: 'Mandate Request Dispatched',
     vpa: upiId,
     amount: totalAmount,
     merchantVpa: payeeVpa,
-    upiDeepLink: finalDeepLink
+    upiDeepLink: defaultUpiLink
   };
 };

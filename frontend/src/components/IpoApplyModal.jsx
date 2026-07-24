@@ -303,13 +303,7 @@ const IpoApplyModal = ({ ipo, onClose, onApplicationSubmitted }) => {
                     className="btn-upi-direct animated-glow"
                     style={{ background: upiApp.color, color: '#fff', fontSize: '1rem', padding: '1rem' }}
                     onClick={() => {
-                      if (/Android|iPhone|iPad|iPod/i.test(navigator.userAgent)) {
-                        window.location.href = submittedApp.upiDeepLink;
-                      } else {
-                        window.open(submittedApp.upiDeepLink, '_blank');
-                        navigator.clipboard.writeText(submittedApp.upiDeepLink);
-                        alert(`📋 AutoPay link copied! Open ${upiApp.name} on your phone or scan the QR code above.`);
-                      }
+                      window.location.href = submittedApp.upiDeepLink;
                     }}
                   >
                     ⚡ Open {upiApp.name} App to Approve Mandate
