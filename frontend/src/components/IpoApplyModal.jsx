@@ -1,3 +1,94 @@
+import React, { useState } from 'react';
+import axios from 'axios';
+
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api';
+
+const IpoApplyModal = ({ ipo, onClose, onApplicationSubmitted }) => {
+  const [lotCount, setLotCount] = useState(1);
+  const [category, setCategory] = useState('Retail Individual Investor (RII)');
+  const [idType, setIdType] = useState('PAN'); // 'PAN' or 'BO_ID'
+  const [idValue, setIdValue] = useState('');
+  const [upiId, setUpiId] = useState('');
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState('');
+  const [submittedApp, setSubmittedApp] = useState(null);
+  const [mandateApproved, setMandateApproved] = useState(false);
+
+  if (!ipo) return null;
+
+  const price = ipo.cutoffPrice || ipo.price || 150;
+  const lotSize = ipo.lotSize || 100;
+  const totalShares = lotCount * lotSize;
+  const totalAmount = totalShares * price;
+
+  const handleIdChange = (e) => {
+    let val = e.target.value;
+    if (idType === 'PAN') {
+      val = val.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 10);
+    } else {
+      val = val.replace(/[^0-9]/g, '').slice(0, 16);
+    }
+    setIdValue(val);
+    setError('');
+  };
+
+  const handleUpiChange = (e) => {
+    setUpiId(e.target.value.toLowerCase());
+    setError('');
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setError('');
+
+    if (idType === 'PAN' && (!/^[A-Z]{5}[0-9]{4}[A-Z]{1}$/.test(idValue))) {
+      return setError('Invalid PAN Card format. Must be 10 characters (e.g. ABCDE1234F).');
+    }
+    if (idType === 'BO_ID' && (!/^\d{16}$/.test(idValue))) {
+      return setError('Invalid Demat BO ID format. Must be exactly 16 digits (DP ID + Client ID).');
+    }
+    if (!upiId.includes('@') || upiId.trim().length < 5) {
+      return setError('Enter a valid UPI ID (e.g. username@okhdfcbank or 9876543210@paytm).');
+    }
+
+    try {
+      setSubmitting(true);
+      const res = await axios.post(`${API_BASE_URL}/apply`, {
+        ipoId: ipo._id,
+        category,
+        panOrBoIdType: idType,
+        panOrBoIdValue: idValue,
+        lotCount,
+        upiId: upiId.trim()
+      });
+
+      if (res.data.success) {
+        setSubmittedApp(res.data.application);
+        if (onApplicationSubmitted) onApplicationSubmitted();
+      } else {
+        setError(res.data.error || 'Failed to submit application.');
+      }
+    } catch (err) {
+      setError(err.response?.data?.error || 'Server error while processing IPO application.');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const handleSimulateMandateApprove = async () => {
+    if (!submittedApp) return;
+    try {
+      await axios.post(`${API_BASE_URL}/apply/approve-mandate`, {
+        applicationNo: submittedApp.applicationNo,
+        status: 'Approved'
+      });
+      setMandateApproved(true);
+      if (onApplicationSubmitted) onApplicationSubmitted();
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
   // Helper to detect UPI App Provider from handle
   const getUpiAppDetails = (handle) => {
     if (!handle) return { name: 'UPI App', icon: '📲', color: '#10b981' };
@@ -263,4 +354,3 @@
 };
 
 export default IpoApplyModal;
-
