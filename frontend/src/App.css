@@ -1469,6 +1469,22 @@
   box-shadow: 0 4px 14px rgba(0, 208, 156, 0.4);
 }
 
+.animated-glow {
+  animation: pulseGlow 1.8s infinite;
+}
+
+@keyframes pulseGlow {
+  0% {
+    box-shadow: 0 0 0 0 rgba(66, 133, 244, 0.7);
+  }
+  70% {
+    box-shadow: 0 0 0 12px rgba(66, 133, 244, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(66, 133, 244, 0);
+  }
+}
+
 .success-sub {
   font-size: 0.9rem;
   color: var(--text-secondary);

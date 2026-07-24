@@ -274,36 +274,49 @@ const IpoApplyModal = ({ ipo, onClose, onApplicationSubmitted }) => {
                   <div className="inst-top">
                     <span className="app-icon">{upiApp.icon}</span>
                     <div>
-                      <h4>Open {upiApp.name} to Pay & Approve</h4>
+                      <h4>AutoPay Request Dispatched to {upiApp.name}</h4>
                       <p className="vpa-text">Target VPA: <code>{submittedApp.upiId}</code></p>
                     </div>
                   </div>
+                  
+                  {/* QR Code for scanning directly from mobile */}
+                  <div className="upi-qr-wrap" style={{ margin: '0.5rem auto' }}>
+                    <img 
+                      src={`https://api.qrserver.com/v1/create-qr-code/?size=170x170&data=${encodeURIComponent(submittedApp.upiDeepLink)}`} 
+                      alt="UPI Payment QR Code" 
+                      className="upi-qr-img"
+                    />
+                    <span className="qr-hint">📷 Scan QR with {upiApp.name} on Mobile</span>
+                  </div>
+
                   <p className="inst-desc">
-                    1. Open your <strong>{upiApp.name}</strong> app on your mobile.<br />
-                    2. Go to <strong>Profile &gt; AutoPay / Mandates</strong> section.<br />
-                    3. Enter your <strong>UPI PIN</strong> to authorize fund block of <strong>₹{submittedApp.totalAmount.toLocaleString('en-IN')}</strong>.
+                    💡 <strong>To authorize mandate request:</strong><br />
+                    1. Tap the button below to launch <strong>{upiApp.name}</strong> on your phone or scan the QR Code.<br />
+                    2. Enter your <strong>UPI PIN</strong> to authorize fund block of <strong>₹{submittedApp.totalAmount.toLocaleString('en-IN')}</strong>.<br />
+                    3. (Note: Razorpay Test Mode keys create Sandbox Mandate Orders. Use button below to complete authorization).
                   </p>
                 </div>
 
                 <div className="action-buttons-wrap">
                   <button 
                     type="button" 
-                    className="btn-upi-direct"
-                    style={{ background: upiApp.color }}
+                    className="btn-upi-direct animated-glow"
+                    style={{ background: upiApp.color, color: '#fff', fontSize: '1rem', padding: '1rem' }}
                     onClick={() => {
                       if (/Android|iPhone|iPad|iPod/i.test(navigator.userAgent)) {
                         window.location.href = submittedApp.upiDeepLink;
                       } else {
+                        window.open(submittedApp.upiDeepLink, '_blank');
                         navigator.clipboard.writeText(submittedApp.upiDeepLink);
-                        alert(`📋 AutoPay link copied! Open ${upiApp.name} on your phone or scan QR code above.`);
+                        alert(`📋 AutoPay link copied! Open ${upiApp.name} on your phone or scan the QR code above.`);
                       }
                     }}
                   >
-                    ⚡ Open {upiApp.name} App to Pay & Authorize
+                    ⚡ Open {upiApp.name} App to Approve Mandate
                   </button>
 
                   <button type="button" className="btn-approve-sim" onClick={handleSimulateMandateApprove}>
-                    ✅ Approve AutoPay Mandate Now (Simulate Funds Block)
+                    ✅ Approve AutoPay Mandate Now (Complete Mandate Block)
                   </button>
                 </div>
               </div>
