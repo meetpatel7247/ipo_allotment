@@ -14,6 +14,8 @@ const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000
 function App() {
   const [ipos, setIpos] = useState([]);
   const [biddingIpos, setBiddingIpos] = useState([]);
+  const [biddingSearch, setBiddingSearch] = useState('');
+  const [biddingCategory, setBiddingCategory] = useState('ALL');
   const [history, setHistory] = useState([]);
   const [activeMode, setActiveMode] = useState('single');
   const [selectedIpoId, setSelectedIpoId] = useState('ALL');
@@ -135,6 +137,13 @@ function App() {
     totalAmount: results.reduce((acc, curr) => acc + curr.amount, 0)
   } : null;
 
+  const filteredBiddingIpos = biddingIpos.filter((bipo) => {
+    const matchesSearch = bipo.name.toLowerCase().includes(biddingSearch.toLowerCase()) ||
+                          bipo.symbol.toLowerCase().includes(biddingSearch.toLowerCase());
+    const matchesCategory = biddingCategory === 'ALL' || bipo.category === biddingCategory;
+    return matchesSearch && matchesCategory;
+  });
+
   return (
     <div className="app-container">
       <Header />
@@ -167,11 +176,62 @@ function App() {
             <h2>🚀 Live & Pre-Apply IPOs (Direct In-App Bidding)</h2>
             <p>Select an IPO, pick your lot count, enter your PAN or 16-digit Demat BO ID, and complete UPI AutoPay Mandate!</p>
           </div>
+
+          {/* Search & Category Filter Controls */}
+          <div className="bidding-filter-bar">
+            <div className="search-input-wrap">
+              <span className="search-icon">🔍</span>
+              <input
+                type="text"
+                className="bidding-search-input"
+                placeholder="Search IPO by company name or symbol..."
+                value={biddingSearch}
+                onChange={(e) => setBiddingSearch(e.target.value)}
+              />
+              {biddingSearch && (
+                <button type="button" className="clear-search-btn" onClick={() => setBiddingSearch('')}>✕</button>
+              )}
+            </div>
+
+            <div className="category-filter-tabs">
+              <button
+                type="button"
+                className={`cat-tab ${biddingCategory === 'ALL' ? 'active' : ''}`}
+                onClick={() => setBiddingCategory('ALL')}
+              >
+                All IPOs ({biddingIpos.length})
+              </button>
+              <button
+                type="button"
+                className={`cat-tab ${biddingCategory === 'Mainboard' ? 'active' : ''}`}
+                onClick={() => setBiddingCategory('Mainboard')}
+              >
+                🏢 Mainboard ({biddingIpos.filter(i => i.category === 'Mainboard').length})
+              </button>
+              <button
+                type="button"
+                className={`cat-tab ${biddingCategory === 'SME' ? 'active' : ''}`}
+                onClick={() => setBiddingCategory('SME')}
+              >
+                🚀 SME ({biddingIpos.filter(i => i.category === 'SME').length})
+              </button>
+            </div>
+          </div>
+
           <div className="ipo-cards-grid">
-            {biddingIpos.length === 0 ? (
-              <p className="no-ipos-msg">Loading active IPOs for bidding...</p>
+            {filteredBiddingIpos.length === 0 ? (
+              <div className="no-bidding-found">
+                <p>🔍 No IPOs matched your search or category filter.</p>
+                <button 
+                  type="button" 
+                  className="reset-filter-btn" 
+                  onClick={() => { setBiddingSearch(''); setBiddingCategory('ALL'); }}
+                >
+                  Reset Search & Filters
+                </button>
+              </div>
             ) : (
-              biddingIpos.map((bipo) => (
+              filteredBiddingIpos.map((bipo) => (
                 <IpoApplyCard
                   key={bipo._id}
                   ipo={bipo}
@@ -209,4 +269,5 @@ function App() {
 }
 
 export default App;
+
 

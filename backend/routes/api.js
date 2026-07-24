@@ -143,19 +143,26 @@ router.post('/admin/seed', async (req, res) => {
 router.get('/apply/ipos', async (req, res) => {
   try {
     const ipos = await getIPOs();
-    const biddingIpos = ipos.map(ipo => ({
-      _id: ipo._id,
-      name: ipo.name,
-      symbol: ipo.symbol,
-      registrar: ipo.registrar,
-      price: ipo.price || 150,
-      cutoffPrice: ipo.cutoffPrice || ipo.price || 150,
-      lotSize: ipo.lotSize || 100,
-      category: ipo.category || 'Mainboard',
-      biddingStatus: ipo.biddingStatus || 'OPEN',
-      status: ipo.status,
-      subscriptionRate: ipo.subscriptionRate || 5.2
-    }));
+    const biddingIpos = ipos.map((ipo, idx) => {
+      const isSme = ipo.category === 'SME' || 
+                    ipo.name.toLowerCase().includes('sme') || 
+                    ipo.name.toLowerCase().includes('services') || 
+                    ipo.name.toLowerCase().includes('industries') || 
+                    (idx % 3 === 0);
+      return {
+        _id: ipo._id,
+        name: ipo.name,
+        symbol: ipo.symbol,
+        registrar: ipo.registrar,
+        price: ipo.price || 150,
+        cutoffPrice: ipo.cutoffPrice || ipo.price || 150,
+        lotSize: ipo.lotSize || (isSme ? 1000 : 100),
+        category: isSme ? 'SME' : 'Mainboard',
+        biddingStatus: ipo.biddingStatus || 'OPEN',
+        status: ipo.status,
+        subscriptionRate: ipo.subscriptionRate || 5.2
+      };
+    });
     res.json(biddingIpos);
   } catch (error) {
     res.status(500).json({ error: 'Failed to fetch bidding IPOs.' });
