@@ -692,10 +692,83 @@
   margin-bottom: 0.3rem;
 }
 
-.section-title-wrap p {
-  color: var(--text-secondary);
-  font-size: 0.95rem;
+/* Bidding Status Tabs (Groww / Angel One style) */
+.status-filter-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-bottom: 0.5rem;
 }
+
+.status-tab-btn {
+  background: rgba(0, 0, 0, 0.25);
+  border: 1px solid var(--border-color);
+  padding: 0.65rem 1.25rem;
+  border-radius: 12px;
+  color: var(--text-secondary);
+  font-weight: 600;
+  font-size: 0.88rem;
+  cursor: pointer;
+  transition: var(--transition-smooth);
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.status-tab-btn:hover {
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--text-primary);
+}
+
+.status-tab-btn.active.open-tab {
+  background: rgba(16, 185, 129, 0.15) !important;
+  border-color: #10b981 !important;
+  color: #10b981 !important;
+  font-weight: 700 !important;
+  box-shadow: 0 0 15px rgba(16, 185, 129, 0.2);
+}
+
+.status-tab-btn.active.upcoming-tab {
+  background: rgba(245, 158, 11, 0.15) !important;
+  border-color: #f59e0b !important;
+  color: #f59e0b !important;
+  font-weight: 700 !important;
+}
+
+.status-tab-btn.active.closed-tab {
+  background: rgba(239, 68, 68, 0.15) !important;
+  border-color: #ef4444 !important;
+  color: #ef4444 !important;
+  font-weight: 700 !important;
+}
+
+.status-tab-btn.active {
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--color-primary);
+  border-color: var(--color-primary);
+  font-weight: 700;
+}
+
+/* Card Disabled Styling for Closed / Upcoming */
+.ipo-apply-card.card-disabled {
+  opacity: 0.7;
+  filter: grayscale(20%);
+}
+
+.status-pill.closed-live {
+  background: rgba(239, 68, 68, 0.15);
+  color: #ef4444;
+  border: 1px solid #ef4444;
+}
+
+.apply-btn.btn-disabled {
+  background: rgba(255, 255, 255, 0.05) !important;
+  border: 1px solid var(--border-color) !important;
+  color: var(--text-muted) !important;
+  cursor: not-allowed !important;
+  font-weight: 600 !important;
+}
+
 
 /* Bidding Search & Category Filter Bar */
 .bidding-filter-bar {

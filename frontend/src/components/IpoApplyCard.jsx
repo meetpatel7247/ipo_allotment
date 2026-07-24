@@ -1,16 +1,19 @@
 import React from 'react';
 
 const IpoApplyCard = ({ ipo, onApplyClick }) => {
-  const isPreApply = ipo.biddingStatus === 'PRE_APPLY';
+  const isOpen = ipo.biddingStatus === 'OPEN';
+  const isUpcoming = ipo.biddingStatus === 'UPCOMING';
+  const isClosed = ipo.biddingStatus === 'CLOSED';
+
   const priceDisplay = ipo.cutoffPrice ? `₹${ipo.cutoffPrice}` : `₹${ipo.price || 150}`;
   const minInvestment = (ipo.lotSize || 100) * (ipo.cutoffPrice || ipo.price || 150);
 
   return (
-    <div className="ipo-apply-card">
+    <div className={`ipo-apply-card ${!isOpen ? 'card-disabled' : ''}`}>
       <div className="card-top">
         <div className="ipo-badge-wrap">
-          <span className={`status-pill ${isPreApply ? 'pre-apply' : 'open-live'}`}>
-            {isPreApply ? '⚡ PRE-APPLY' : '🟢 OPEN NOW'}
+          <span className={`status-pill ${isOpen ? 'open-live' : isUpcoming ? 'pre-apply' : 'closed-live'}`}>
+            {isOpen ? '🟢 OPEN NOW' : isUpcoming ? '⏰ UPCOMING' : '🔴 CLOSED'}
           </span>
           <span className="category-pill">{ipo.category || 'Mainboard'}</span>
         </div>
@@ -45,15 +48,26 @@ const IpoApplyCard = ({ ipo, onApplyClick }) => {
       </div>
 
       <div className="card-actions">
-        <button 
-          className={`apply-btn ${isPreApply ? 'btn-pre' : 'btn-open'}`}
-          onClick={() => onApplyClick(ipo)}
-        >
-          {isPreApply ? '🚀 Pre-Apply Now' : '⚡ Apply for IPO'}
-        </button>
+        {isOpen ? (
+          <button 
+            className="apply-btn btn-open"
+            onClick={() => onApplyClick(ipo)}
+          >
+            ⚡ Apply for IPO
+          </button>
+        ) : isUpcoming ? (
+          <button className="apply-btn btn-disabled" disabled>
+            ⏰ Opening Soon
+          </button>
+        ) : (
+          <button className="apply-btn btn-disabled" disabled>
+            🔒 Bidding Closed
+          </button>
+        )}
       </div>
     </div>
   );
 };
 
 export default IpoApplyCard;
+

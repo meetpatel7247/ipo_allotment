@@ -16,6 +16,7 @@ function App() {
   const [biddingIpos, setBiddingIpos] = useState([]);
   const [biddingSearch, setBiddingSearch] = useState('');
   const [biddingCategory, setBiddingCategory] = useState('ALL');
+  const [biddingStatusFilter, setBiddingStatusFilter] = useState('OPEN'); // Groww style default OPEN!
   const [history, setHistory] = useState([]);
   const [activeMode, setActiveMode] = useState('single');
   const [selectedIpoId, setSelectedIpoId] = useState('ALL');
@@ -141,7 +142,8 @@ function App() {
     const matchesSearch = bipo.name.toLowerCase().includes(biddingSearch.toLowerCase()) ||
                           bipo.symbol.toLowerCase().includes(biddingSearch.toLowerCase());
     const matchesCategory = biddingCategory === 'ALL' || bipo.category === biddingCategory;
-    return matchesSearch && matchesCategory;
+    const matchesStatus = biddingStatusFilter === 'ALL' || bipo.biddingStatus === biddingStatusFilter;
+    return matchesSearch && matchesCategory && matchesStatus;
   });
 
   return (
@@ -173,8 +175,40 @@ function App() {
       {activeMode === 'apply' && (
         <main className="bidding-section">
           <div className="section-title-wrap">
-            <h2>🚀 Live & Pre-Apply IPOs (Direct In-App Bidding)</h2>
-            <p>Select an IPO, pick your lot count, enter your PAN or 16-digit Demat BO ID, and complete UPI AutoPay Mandate!</p>
+            <h2>🚀 Apply for Open IPOs (Groww & Angel One Style)</h2>
+            <p>Select an OPEN IPO to place your bid with instant lot pricing and UPI AutoPay Mandate!</p>
+          </div>
+
+          {/* Status Tabs (Groww Style: OPEN default!) */}
+          <div className="status-filter-bar">
+            <button
+              type="button"
+              className={`status-tab-btn open-tab ${biddingStatusFilter === 'OPEN' ? 'active' : ''}`}
+              onClick={() => setBiddingStatusFilter('OPEN')}
+            >
+              🟢 OPEN IPOs ({biddingIpos.filter(i => i.biddingStatus === 'OPEN').length})
+            </button>
+            <button
+              type="button"
+              className={`status-tab-btn upcoming-tab ${biddingStatusFilter === 'UPCOMING' ? 'active' : ''}`}
+              onClick={() => setBiddingStatusFilter('UPCOMING')}
+            >
+              ⏰ UPCOMING ({biddingIpos.filter(i => i.biddingStatus === 'UPCOMING').length})
+            </button>
+            <button
+              type="button"
+              className={`status-tab-btn closed-tab ${biddingStatusFilter === 'CLOSED' ? 'active' : ''}`}
+              onClick={() => setBiddingStatusFilter('CLOSED')}
+            >
+              🔴 CLOSED ({biddingIpos.filter(i => i.biddingStatus === 'CLOSED').length})
+            </button>
+            <button
+              type="button"
+              className={`status-tab-btn ${biddingStatusFilter === 'ALL' ? 'active' : ''}`}
+              onClick={() => setBiddingStatusFilter('ALL')}
+            >
+              ALL STATUS ({biddingIpos.length})
+            </button>
           </div>
 
           {/* Search & Category Filter Controls */}
@@ -199,21 +233,21 @@ function App() {
                 className={`cat-tab ${biddingCategory === 'ALL' ? 'active' : ''}`}
                 onClick={() => setBiddingCategory('ALL')}
               >
-                All IPOs ({biddingIpos.length})
+                All Categories
               </button>
               <button
                 type="button"
                 className={`cat-tab ${biddingCategory === 'Mainboard' ? 'active' : ''}`}
                 onClick={() => setBiddingCategory('Mainboard')}
               >
-                🏢 Mainboard ({biddingIpos.filter(i => i.category === 'Mainboard').length})
+                🏢 Mainboard
               </button>
               <button
                 type="button"
                 className={`cat-tab ${biddingCategory === 'SME' ? 'active' : ''}`}
                 onClick={() => setBiddingCategory('SME')}
               >
-                🚀 SME ({biddingIpos.filter(i => i.category === 'SME').length})
+                🚀 SME
               </button>
             </div>
           </div>
@@ -221,13 +255,13 @@ function App() {
           <div className="ipo-cards-grid">
             {filteredBiddingIpos.length === 0 ? (
               <div className="no-bidding-found">
-                <p>🔍 No IPOs matched your search or category filter.</p>
+                <p>🔍 No IPOs found under {biddingStatusFilter} filter.</p>
                 <button 
                   type="button" 
                   className="reset-filter-btn" 
-                  onClick={() => { setBiddingSearch(''); setBiddingCategory('ALL'); }}
+                  onClick={() => { setBiddingSearch(''); setBiddingCategory('ALL'); setBiddingStatusFilter('OPEN'); }}
                 >
-                  Reset Search & Filters
+                  Show Open IPOs
                 </button>
               </div>
             ) : (
@@ -269,5 +303,6 @@ function App() {
 }
 
 export default App;
+
 
 

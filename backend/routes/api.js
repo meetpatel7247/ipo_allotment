@@ -149,6 +149,20 @@ router.get('/apply/ipos', async (req, res) => {
                     ipo.name.toLowerCase().includes('services') || 
                     ipo.name.toLowerCase().includes('industries') || 
                     (idx % 3 === 0);
+      
+      // Groww / Angel One Status Mapping:
+      // OPEN: Active live bidding open
+      // UPCOMING: Pre-apply / opening soon
+      // CLOSED: Bidding ended / Allotted
+      let statusType = 'OPEN';
+      if (ipo.status === 'Closed' || ipo.status === 'Allotted' || idx % 4 === 3) {
+        statusType = 'CLOSED';
+      } else if (idx % 4 === 2) {
+        statusType = 'UPCOMING';
+      } else {
+        statusType = 'OPEN';
+      }
+
       return {
         _id: ipo._id,
         name: ipo.name,
@@ -158,7 +172,7 @@ router.get('/apply/ipos', async (req, res) => {
         cutoffPrice: ipo.cutoffPrice || ipo.price || 150,
         lotSize: ipo.lotSize || (isSme ? 1000 : 100),
         category: isSme ? 'SME' : 'Mainboard',
-        biddingStatus: ipo.biddingStatus || 'OPEN',
+        biddingStatus: statusType, // 'OPEN', 'UPCOMING', 'CLOSED'
         status: ipo.status,
         subscriptionRate: ipo.subscriptionRate || 5.2
       };
@@ -176,6 +190,18 @@ router.post('/apply', async (req, res) => {
 
     if (!ipoId || !panOrBoIdType || !panOrBoIdValue || !lotCount || !upiId) {
       return res.status(400).json({ error: 'All fields (ipoId, panOrBoIdType, panOrBoIdValue, lotCount, upiId) are required.' });
+    }
+
+    // Find IPO
+    const ipos = await getIPOs();
+    const ipo = ipos.find(i => String(i._id) === String(ipoId));
+    if (!ipo) {
+      return res.status(404).json({ error: 'Selected IPO not found.' });
+    }
+
+    // Strict Groww / Angel One rule: Only OPEN IPOs can be applied for
+    if (ipo.status === 'Closed' || ipo.status === 'Allotted') {
+      return res.status(400).json({ error: 'This IPO is CLOSED. You can only apply for OPEN IPOs.' });
     }
 
     // Validate PAN or BO ID
@@ -198,13 +224,6 @@ router.post('/apply', async (req, res) => {
     const cleanUpi = upiId.trim().toLowerCase();
     if (!cleanUpi.includes('@') || cleanUpi.length < 5) {
       return res.status(400).json({ error: 'Invalid UPI ID handle (e.g. name@okhdfcbank or 9876543210@paytm).' });
-    }
-
-    // Find IPO
-    const ipos = await getIPOs();
-    const ipo = ipos.find(i => String(i._id) === String(ipoId));
-    if (!ipo) {
-      return res.status(404).json({ error: 'Selected IPO not found.' });
     }
 
     const lots = Math.max(1, Math.min(parseInt(lotCount) || 1, 14));
