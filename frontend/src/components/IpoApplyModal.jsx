@@ -303,7 +303,12 @@ const IpoApplyModal = ({ ipo, onClose, onApplicationSubmitted }) => {
                     className="btn-upi-direct animated-glow"
                     style={{ background: upiApp.color, color: '#fff', fontSize: '1rem', padding: '1rem' }}
                     onClick={() => {
-                      window.location.href = submittedApp.upiDeepLink;
+                      if (/Android|iPhone|iPad|iPod/i.test(navigator.userAgent)) {
+                        window.location.href = submittedApp.upiDeepLink;
+                      } else {
+                        navigator.clipboard.writeText(submittedApp.upiDeepLink);
+                        alert(`📋 UPI Mandate Link copied to clipboard! Open ${upiApp.name} on your mobile or scan the QR Code above to approve.`);
+                      }
                     }}
                   >
                     ⚡ Open {upiApp.name} App to Approve Mandate
