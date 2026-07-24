@@ -239,15 +239,35 @@ const IpoApplyModal = ({ ipo, onClose, onApplicationSubmitted }) => {
             </div>
 
             <div className="mandate-step-box">
-              <h4>📲 UPI AutoPay Mandate Action</h4>
-              <p>A mandate notification has been dispatched to <strong>{submittedApp.upiId}</strong>.</p>
+              <h4>📲 UPI AutoPay Mandate Block</h4>
+              <p>A payment mandate notification has been dispatched to <strong>{submittedApp.upiId}</strong>.</p>
               
+              {/* QR Code for Desktop Scanner */}
+              <div className="upi-qr-wrap">
+                <img 
+                  src={`https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(submittedApp.upiDeepLink)}`} 
+                  alt="UPI Payment QR Code" 
+                  className="upi-qr-img"
+                />
+                <span className="qr-hint">📷 Scan with PhonePe / GPay / Paytm to Approve</span>
+              </div>
+
               <div className="action-buttons-wrap">
-                {submittedApp.upiDeepLink && (
-                  <a href={submittedApp.upiDeepLink} target="_blank" rel="noreferrer" className="btn-upi-direct">
-                    ⚡ Open UPI App to Approve Mandate
-                  </a>
-                )}
+                <button 
+                  type="button" 
+                  className="btn-upi-direct"
+                  onClick={() => {
+                    if (/Android|iPhone|iPad|iPod/i.test(navigator.userAgent)) {
+                      window.location.href = submittedApp.upiDeepLink;
+                    } else {
+                      navigator.clipboard.writeText(submittedApp.upiDeepLink);
+                      alert('📋 UPI Payment Link copied to clipboard! You can paste it into your mobile browser or scan the QR Code above.');
+                    }
+                  }}
+                >
+                  ⚡ Open in UPI App / Copy Link
+                </button>
+
                 {!mandateApproved ? (
                   <button type="button" className="btn-approve-sim" onClick={handleSimulateMandateApprove}>
                     ✅ Approve Mandate Now (Simulate Approval)
