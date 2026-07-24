@@ -141,21 +141,14 @@ router.post('/admin/seed', async (req, res) => {
 // 🚀 DIRECT IN-APP IPO BIDDING & APPLICATIONS
 // ==========================================
 
-// Route: Get IPOs available for Bidding (Live from Groww — Open, Upcoming, Closed)
+// Route: Get IPOs available for Bidding / Pre-Apply (Fetched Live from Groww API)
 router.get('/apply/ipos', async (req, res) => {
   try {
-    const { status } = req.query;
-    const allIpos = await fetchAllGrowwBiddingIPOs();
+    const liveOpenIpos = await fetchGrowwLiveOpenIPOs();
 
-    if (allIpos && allIpos.length > 0) {
-      const openCount = allIpos.filter(i => i.biddingStatus === 'OPEN').length;
-      const upcomingCount = allIpos.filter(i => i.biddingStatus === 'UPCOMING').length;
-      console.log(`✅ Serving ${allIpos.length} Groww IPOs (Open: ${openCount}, Upcoming: ${upcomingCount})`);
-
-      if (status && status !== 'ALL') {
-        return res.json(allIpos.filter(i => i.biddingStatus === status.toUpperCase()));
-      }
-      return res.json(allIpos);
+    if (liveOpenIpos && liveOpenIpos.length > 0) {
+      console.log(`✅ Serving EXACTLY ${liveOpenIpos.length} Live Open Groww IPOs.`);
+      return res.json(liveOpenIpos);
     }
 
     // Fallback to database IPOs if live API is temporarily unreachable
@@ -218,16 +211,17 @@ const flexibleFindIpo = (targetId, ipoList) => {
 // Route: Submit Direct In-App IPO Application
 router.post('/apply', async (req, res) => {
   try {
-    const { ipoId, category, panOrBoIdType, panOrBoIdValue, lotCount, upiId, applicantName, bidAtCutoff } = req.body;
+    const { ipoId, category, panOrBoIdType, panOrBoIdValue, lotCount, upiId } = req.body;
 
     if (!ipoId || !panOrBoIdType || !panOrBoIdValue || !lotCount || !upiId) {
       return res.status(400).json({ error: 'All fields (ipoId, panOrBoIdType, panOrBoIdValue, lotCount, upiId) are required.' });
     }
 
     // 1. Fetch candidates from Groww Live API first, then local DB
-    const allGrowwIpos = await fetchAllGrowwBiddingIPOs();
+    const growwOpen = await fetchGrowwLiveOpenIPOs();
+    const growwClosed = await fetchGrowwLiveClosedIPOs();
     const dbIpos = await getIPOs();
-    const allCandidates = [...(allGrowwIpos || []), ...(dbIpos || [])];
+    const allCandidates = [...(growwOpen || []), ...(growwClosed || []), ...(dbIpos || [])];
 
     let ipo = flexibleFindIpo(ipoId, allCandidates);
 
@@ -248,9 +242,9 @@ router.post('/apply', async (req, res) => {
       };
     }
 
-    // Strict rule: Only OPEN or UPCOMING (pre-apply) IPOs can be applied for
+    // Strict Groww / Angel One rule: Only OPEN IPOs can be applied for
     if (ipo.biddingStatus === 'CLOSED' || ipo.status === 'Closed' || ipo.status === 'Allotted') {
-      return res.status(400).json({ error: 'This IPO is CLOSED for bidding. You can only apply for OPEN or Upcoming IPOs.' });
+      return res.status(400).json({ error: 'This IPO is CLOSED for bidding. You can only apply for OPEN IPOs.' });
     }
 
     // Validate PAN or BO ID
@@ -277,16 +271,8 @@ router.post('/apply', async (req, res) => {
 
     const lots = Math.max(1, Math.min(parseInt(lotCount) || 1, 14));
     const lotSize = ipo.lotSize || 100;
-    const bidPrice = bidAtCutoff !== false ? (ipo.cutoffPrice || ipo.maxPrice || ipo.price || 150) : (ipo.cutoffPrice || ipo.price || 150);
-    const totalAmount = lots * lotSize * bidPrice;
-
-    // Retail category limit: ₹2,00,000 (SEBI ASBA rule — same as Groww/Angel One)
-    const isRetail = !category || category.includes('Retail') || category.includes('RII');
-    if (isRetail && totalAmount > 200000) {
-      return res.status(400).json({
-        error: `Retail bid amount ₹${totalAmount.toLocaleString('en-IN')} exceeds ₹2,00,000 limit. Reduce lots or switch to HNI category.`
-      });
-    }
+    const cutoffPrice = ipo.cutoffPrice || ipo.price || 150;
+    const totalAmount = lots * lotSize * cutoffPrice;
 
     // Mask PAN / BO ID for privacy display
     let maskedValue = cleanId;
@@ -314,19 +300,17 @@ router.post('/apply', async (req, res) => {
     const applicationRecord = await addApplication({
       ipoId: String(ipo._id),
       ipoName: ipo.name,
-      applicantName: applicantName?.trim() || 'Investor',
       category: category || 'Retail Individual Investor (RII)',
       panOrBoIdType,
       panOrBoIdValue: maskedValue,
       lotCount: lots,
       lotSize,
-      cutoffPrice: bidPrice,
+      cutoffPrice,
       totalAmount,
       upiId: cleanUpi,
       applicationNo,
       mandateStatus: 'Mandate Sent',
       upiDeepLink,
-      biddingStatus: ipo.biddingStatus,
       timestamp: new Date()
     });
 
@@ -341,18 +325,11 @@ router.post('/apply', async (req, res) => {
   }
 });
 
-// Route: Get user IPO applications (optional filter by PAN)
+// Route: Get user IPO applications
 router.get('/apply/applications', async (req, res) => {
   try {
     const { getApplications } = await import('../config/db.js');
-    let apps = await getApplications();
-    const { pan } = req.query;
-    if (pan) {
-      const panPrefix = pan.trim().toUpperCase().slice(0, 5);
-      apps = apps.filter(a =>
-        a.panOrBoIdType === 'PAN' && a.panOrBoIdValue.toUpperCase().startsWith(panPrefix)
-      );
-    }
+    const apps = await getApplications();
     res.json(apps);
   } catch (error) {
     res.status(500).json({ error: 'Failed to fetch IPO applications.' });
@@ -374,26 +351,6 @@ router.post('/apply/approve-mandate', async (req, res) => {
     res.json({ success: true, application: updated });
   } catch (error) {
     res.status(500).json({ error: 'Failed to update mandate status.' });
-  }
-});
-
-// Route: Cancel IPO Application (before mandate approval)
-router.delete('/apply/:applicationNo', async (req, res) => {
-  try {
-    const { applicationNo } = req.params;
-    const { getApplications, deleteApplication } = await import('../config/db.js');
-    const apps = await getApplications();
-    const app = apps.find(a => a.applicationNo === applicationNo);
-    if (!app) {
-      return res.status(404).json({ error: 'Application not found.' });
-    }
-    if (app.mandateStatus === 'Approved' || app.mandateStatus === 'Submitted to Exchange') {
-      return res.status(400).json({ error: 'Cannot cancel — mandate already approved and bid submitted to exchange.' });
-    }
-    await deleteApplication(applicationNo);
-    res.json({ success: true, message: 'IPO application cancelled successfully.' });
-  } catch (error) {
-    res.status(500).json({ error: 'Failed to cancel application.' });
   }
 });
 

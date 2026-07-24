@@ -30,7 +30,6 @@ const HistorySchema = new mongoose.Schema({
 const ApplicationSchema = new mongoose.Schema({
   ipoId: { type: String, required: true },
   ipoName: { type: String, required: true },
-  applicantName: { type: String, default: 'Investor' },
   category: { type: String, default: 'Retail Individual Investor (RII)' },
   panOrBoIdType: { type: String, enum: ['PAN', 'BO_ID'], required: true },
   panOrBoIdValue: { type: String, required: true }, // masked for privacy
@@ -40,9 +39,8 @@ const ApplicationSchema = new mongoose.Schema({
   totalAmount: { type: Number, required: true },
   upiId: { type: String, required: true },
   applicationNo: { type: String, required: true, unique: true },
-  mandateStatus: { type: String, enum: ['Mandate Sent', 'Approved', 'Submitted to Exchange', 'Cancelled'], default: 'Mandate Sent' },
+  mandateStatus: { type: String, enum: ['Mandate Sent', 'Approved', 'Submitted to Exchange'], default: 'Mandate Sent' },
   upiDeepLink: { type: String },
-  biddingStatus: { type: String, default: 'OPEN' },
   timestamp: { type: Date, default: Date.now }
 }, { timestamps: true });
 

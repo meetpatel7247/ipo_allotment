@@ -178,22 +178,6 @@ export const updateApplicationStatus = async (applicationNo, status) => {
   }
 };
 
-export const deleteApplication = async (applicationNo) => {
-  if (!isFallback) {
-    return await Application.findOneAndDelete({ applicationNo });
-  } else {
-    const db = readFallbackDB();
-    if (!db.applications) db.applications = [];
-    const appIndex = db.applications.findIndex(a => a.applicationNo === applicationNo);
-    if (appIndex !== -1) {
-      const removed = db.applications.splice(appIndex, 1)[0];
-      writeFallbackDB(db);
-      return removed;
-    }
-    return null;
-  }
-};
-
 export const clearAll = async () => {
   if (!isFallback) {
     await IPO.deleteMany({});
