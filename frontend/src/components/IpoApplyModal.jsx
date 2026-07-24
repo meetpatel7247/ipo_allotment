@@ -299,11 +299,20 @@ const IpoApplyModal = ({ ipo, onClose, onApplicationSubmitted }) => {
                       }
                     }}
                   >
-                    ⚡ Open {upiApp.name} App to Pay
+                    ⚡ Open {upiApp.name} App to Pay & Authorize
                   </button>
 
+                  <a 
+                    href="https://groww.in/ipo" 
+                    target="_blank" 
+                    rel="noreferrer" 
+                    className="btn-groww-direct"
+                  >
+                    🚀 Open in Groww App to Complete Live Exchange Bid
+                  </a>
+
                   <button type="button" className="btn-approve-sim" onClick={handleSimulateMandateApprove}>
-                    ✅ I have Authorized Payment / Approve AutoPay Now
+                    ✅ Approve AutoPay Mandate Now (Simulate Funds Block)
                   </button>
                 </div>
               </div>
